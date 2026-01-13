@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- FB / LINE 預覽設定：這在 GitHub Pages 下能 100% 發揮作用 -->
+    <meta property="og:title" content="Cinematic Canvas | Aventurine">
+    <meta property="og:description" content="卡卡瓦夏 - 「幸運，從來不是偶然的施捨。」">
+    <meta property="og:type" content="website">
+    <!-- 下方圖片為 FB 抓取的封面圖 -->
+    <meta property="og:image" content="https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <title>Cinematic Canvas | It's All or Nothing</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;500;700&family=Playfair+Display:ital,wght@1,400;1,700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold: #d4af37;
+            --teal: #0d3b3f;
+            --luxury-gold: linear-gradient(135deg, #d4af37 0%, #f9e2af 50%, #b8860b 100%);
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; overflow: hidden;
+            font-family: 'Noto Serif TC', serif;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        
+        #main-canvas { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: block;
+            z-index: 1;
+        }
+
+        #particle-canvas { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .ui-layer { pointer-events: none; user-select: none; z-index: 20; }
+        .interactive-ui { pointer-events: auto; }
+        
+        #bg-slideshow {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            opacity: 0.05; 
+            pointer-events: none;
+        }
+        .bg-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 2.5s ease-in-out;
+        }
+
+        .gold-glow {
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 35px rgba(13, 59, 63, 0.6);
+        }
+
+        .aventurine-btn {
+            background: rgba(13, 59, 63, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        .back-btn-style {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            opacity: 0.35;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .back-btn-style:hover {
+            opacity: 1;
+            border-color: rgba(212, 175, 55, 0.8);
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .cursor-prev { cursor: w-resize; }
+        .cursor-next { cursor: e-resize; }
+
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center">
+
+    <!-- 全域感應區：左下角隱藏訊息 (針對 Google Sites i 圖標區域擴大) -->
+    <div class="fixed bottom-0 left-0 w-80 h-48 flex items-end pl-14 pb-10 z-[100] group interactive-ui bg-transparent">
+        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-1000 delay-150 pointer-events-none">
+            <p class="text-[13px] md:text-sm text-white/30 tracking-[0.1em] md:tracking-[0.2em] leading-relaxed font-light italic">
+                相葉也想把這個移除掉，但條件不允許<br>
+                可以抖內他或許就可以移除掉了
+            </p>
+        </div>
+    </div>
+
+    <!-- 首頁 Overlay -->
+    <div id="overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030808] transition-all duration-1000">
+        <canvas id="particle-canvas"></canvas>
+        <div id="bg-slideshow">
+            <div id="slide-1" class="bg-slide"></div>
+            <div id="slide-2" class="bg-slide"></div>
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center px-6">
+            <div class="flex items-center gap-6 mb-6 opacity-40">
+                <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
+                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1em] uppercase font-bold">The Strategic Gamble</p>
+                <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
+            </div>
+
+            <div class="overflow-hidden px-4 mb-4 text-center">
+                <h1 id="brand-title" class="text-white text-3xl md:text-6xl lg:text-7xl font-light opacity-0 translate-y-10 tracking-[0.2em] gold-glow uppercase">
+                    IT'S <span class="font-serif italic font-bold">ALL</span> OR <span class="font-serif italic font-bold">NOTHING</span>
+                </h1>
+            </div>
+            
+            <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.2em] md:tracking-[1.5em] mb-16 opacity-0 uppercase font-light">Luck is the only skill</p>
+
+            <div id="loading-status" class="text-[#d4af37]/40 text-[9px] tracking-[0.6em] mb-12 uppercase">Dealing the cosmic cards...</div>
+            
+            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/60 hover:text-white transition-all duration-1000 tracking-[0.6em] md:tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden">
+                <span class="relative z-10 uppercase">Take the chance</span>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#d4af37]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            </button>
+        </div>
+    </div>
+
+    <!-- 照片模式 UI -->
+    <div id="photo-ui" class="ui-layer fixed inset-0 opacity-0 pointer-events-none transition-opacity duration-1000">
+        <div class="fixed top-4 left-4 md:top-6 md:left-6 interactive-ui">
+            <button id="back-btn" class="back-btn-style text-[#d4af37]" title="Leave the table">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="fixed top-5 right-6 md:top-7 md:right-10 text-[9px] md:text-[10px] tracking-[0.4em] text-[#d4af37]/30">
+            HAND <span id="current-num" class="text-white/60">00</span> / <span id="total-num">00</span>
+        </div>
+
+        <div class="fixed bottom-20 md:bottom-24 left-0 w-full flex justify-center px-10">
+            <div id="subtitle-container" class="max-w-4xl text-center">
+                <p id="subtitle-text" class="text-white/90 text-base md:text-2xl font-light leading-relaxed opacity-0 tracking-[0.15em] md:tracking-[0.2em] italic" style="text-shadow: 0 0 15px rgba(0,0,0,1)"></p>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="main-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        const pCanvas = document.getElementById('particle-canvas');
+        const pCtx = pCanvas.getContext('2d');
+
+        let images = [];
+        let currentIdx = -1;
+        let isTransitioning = false;
+        let stopParticles = false;
+        let isInGalleryMode = false;
+
+        const bgImagesUrls = [
+            'https://live.staticflickr.com/65535/55036747752_e3495334e3_h.jpg',
+            'https://live.staticflickr.com/65535/55037653101_ac96d8296e_h.jpg',
+            'https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg'
+        ];
+        let currentBgIdx = 0;
+
+        let particles = [];
+        const particleTypes = ['chip', 'dice', 'card'];
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * pCanvas.width;
+                this.y = -50 - Math.random() * 200;
+                this.size = 12 + Math.random() * 20;
+                this.speed = 0.4 + Math.random() * 1.0;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.015;
+                this.type = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+                this.opacity = 0.1 + Math.random() * 0.3;
+                this.blur = Math.random() * 2;
+            }
+            update() {
+                this.y += this.speed;
+                this.rotation += this.rotSpeed;
+                if (this.y > pCanvas.height + 50) this.reset();
+            }
+            draw() {
+                pCtx.save();
+                pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
+                pCtx.globalAlpha = this.opacity; pCtx.filter = `blur(${this.blur}px)`;
+                pCtx.strokeStyle = '#d4af37'; pCtx.lineWidth = 1;
+                if (this.type === 'chip') {
+                    pCtx.beginPath(); pCtx.arc(0, 0, this.size, 0, Math.PI * 2); pCtx.stroke();
+                    pCtx.beginPath(); pCtx.arc(0, 0, this.size * 0.7, 0, Math.PI * 2); pCtx.setLineDash([4, 4]); pCtx.stroke();
+                } else if (this.type === 'dice') {
+                    pCtx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+                    pCtx.fillStyle = '#d4af37'; pCtx.beginPath(); pCtx.arc(0, 0, 1.5, 0, Math.PI*2); pCtx.fill();
+                } else {
+                    pCtx.strokeRect(-this.size/2, -this.size * 0.7, this.size, this.size * 1.4);
+                    pCtx.font = `${this.size * 0.6}px serif`; pCtx.fillStyle = '#d4af37'; pCtx.fillText('A', -this.size/4, this.size/4);
+                }
+                pCtx.restore();
+            }
+        }
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < (window.innerWidth < 768 ? 30 : 55); i++) particles.push(new Particle());
+        }
+        function animateParticles() {
+            if (stopParticles) return;
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+
+        const sceneConfig = [
+            { url: 'https://live.staticflickr.com/65535/55036738467_6e8273bf12_h.jpg', text: '「幸運，從來不是偶然的施捨。」' },
+            { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。」' },
+            { url: 'https://live.staticflickr.com/65535/55037642501_f0801b7f90_h.jpg', text: '「這張牌，賭上我的靈魂與未來。」' },
+            { url: 'https://live.staticflickr.com/65535/55037821968_6bb08b5b77_h.jpg', text: '「命運從不憐憫弱者，它只眷顧敢於 All-in 的瘋子。」' },
+            { url: 'https://live.staticflickr.com/65535/55037986890_aac979b78f_h.jpg', text: '當金色的雨落下時，遊戲才剛要開始。」' },
+            { url: 'https://live.staticflickr.com/65535/55037987335_be8b101116_h.jpg', text: '「勝負已分。而你，是我的戰利品。」' },
+            { url: 'https://live.staticflickr.com/65535/55036740552_22f10474b4_h.jpg', text: '煙霧繚繞間，我彷彿看見了死神的微笑。」' },
+            { url: 'https://live.staticflickr.com/65535/55037897854_8e08759781_h.jpg', text: '「這張王牌，是為了與你重逢而留的。」' },
+            { url: 'https://live.staticflickr.com/65535/55037644446_d96c896ab6_h.jpg', text: '「願母神賜予我，最後的幸運。」' },
+            { url: 'https://live.staticflickr.com/65535/55037988640_4f2af36145_h.jpg', text: '「籌碼已經落下。」' },
+            { url: 'https://live.staticflickr.com/65535/55037824943_1893edb665_h.jpg', text: '「遊戲還沒結束。」' },
+            { url: 'https://live.staticflickr.com/65535/55037653306_1a25c0a320_h.jpg', text: '「看穿一切的雙眼。」' },
+            { url: 'https://live.staticflickr.com/65535/55037989645_d9a22961c8_c.jpg', text: '「這就是我的底牌。」' },
+            { url: 'https://live.staticflickr.com/65535/55037645801_608474bb7f_c.jpg', text: '「籌碼在指尖旋轉。」' },
+            { url: 'https://live.staticflickr.com/65535/55037990140_b36155f3a5_h.jpg', text: '「命運的豪賭。」' },
+            { url: 'https://live.staticflickr.com/65535/55036743047_db2a13730c_h.jpg', text: '「不可逾越的界限。」' },
+            { url: 'https://live.staticflickr.com/65535/55036743237_af01d41fda_h.jpg', text: '「最後的一眼。」' },
+            { url: 'https://live.staticflickr.com/65535/55037901284_b344569e07_h.jpg', text: '「金色的誘惑。」' },
+            { url: 'https://live.staticflickr.com/65535/55036743462_956d4080a9_h.jpg', text: '「洗牌，重新開始。」' },
+            { url: 'https://live.staticflickr.com/65535/55037902329_6d58f7c54d_c.jpg', text: '「你準備好輸了嗎？」' },
+            { url: 'https://live.staticflickr.com/65535/55037648256_9a2a042d92_h.jpg', text: '「深邃的目光。」' },
+            { url: 'https://live.staticflickr.com/65535/55037648386_ba9f62d887_h.jpg', text: '「無關運氣。」' },
+            { url: 'https://live.staticflickr.com/65535/55037648666_ee22deafe3_h.jpg', text: '「一切都在掌握之中。」' },
+            { url: 'https://live.staticflickr.com/65535/55036745327_83799b354b_h.jpg', text: '「優雅的謝幕。」' },
+            { url: 'https://live.staticflickr.com/65535/55037649091_58418357eb_h.jpg', text: '「賭徒的尊嚴。」' },
+            { url: 'https://live.staticflickr.com/65535/55037828893_fc460d8d1d_h.jpg', text: '「最後的黃金時刻。」' },
+            { url: 'https://live.staticflickr.com/65535/55036744002_09c73361e2_h.jpg', text: '「籌碼已至，生死有命。」' },
+            { url: 'https://live.staticflickr.com/65535/55037903824_eb2d8540b6_h.jpg', text: '「最後的豪賭。」' },
+            { url: 'https://live.staticflickr.com/65535/55037830173_e3e7f9f38f_h.jpg', text: '「願母神保佑。」' },
+            { url: 'https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg', text: '「再會，贏家。」' },
+            { url: 'https://live.staticflickr.com/65535/55037651871_84e0eca8e0_c.jpg', text: '「遊戲結束。」' },
+            { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭。」' }
+        ];
+
+        function resize() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight;
+            initParticles();
+            if (currentIdx >= 0) drawScene(images[currentIdx], 1);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        async function preloadAssets() {
+            const imgPromises = sceneConfig.map((scene) => {
+                return new Promise((resolve) => {
+                    const img = new Image(); img.crossOrigin = "anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null);
+                    img.src = scene.url;
+                });
+            });
+            const bgPromises = bgImagesUrls.map((url) => {
+                return new Promise((resolve) => {
+                    const img = new Image(); img.crossOrigin = "anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null);
+                    img.src = url;
+                });
+            });
+            images = await Promise.all(imgPromises);
+            await Promise.all(bgPromises);
+            document.getElementById('total-num').innerText = String(images.length).padStart(2, '0');
+            document.getElementById('loading-status').classList.add('hidden');
+            document.getElementById('entry-btn').classList.remove('hidden');
+        }
+
+        function startBgSlideshow() {
+            const slides = [document.getElementById('slide-1'), document.getElementById('slide-2')];
+            let activeIdx = 0;
+            slides[0].style.backgroundImage = `url(${bgImagesUrls[0]})`;
+            slides[0].style.opacity = 1;
+            setInterval(() => {
+                if (stopParticles) return;
+                const nextBgIdx = (currentBgIdx + 1) % bgImagesUrls.length;
+                const nextSlideIdx = (activeIdx + 1) % 2;
+                const currentSlide = slides[activeIdx];
+                const nextSlide = slides[nextSlideIdx];
+                nextSlide.style.backgroundImage = `url(${bgImagesUrls[nextBgIdx]})`;
+                currentSlide.style.opacity = 0;
+                nextSlide.style.opacity = 1;
+                currentBgIdx = nextBgIdx;
+                activeIdx = nextSlideIdx;
+            }, 6000);
+        }
+
+        function drawScene(img, opacity) {
+            if (!img) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const imgAspect = img.width / img.height;
+            const canvasAspect = canvas.width / canvas.height;
+            const fitScale = 0.98;
+            let drawW, drawH;
+            if (canvasAspect > imgAspect) {
+                drawH = canvas.height * fitScale; drawW = drawH * imgAspect;
+            } else {
+                drawW = canvas.width * fitScale; drawH = drawW / imgAspect;
+            }
+            const drawX = (canvas.width - drawW) / 2;
+            const drawY = (canvas.height - drawH) / 2;
+            ctx.save(); ctx.filter = 'none'; ctx.globalAlpha = opacity;
+            ctx.drawImage(img, drawX, drawY, drawW, drawH); ctx.restore();
+        }
+
+        function renderCurrentScene() {
+            if (currentIdx < 0) return;
+            const img = images[currentIdx];
+            const scene = sceneConfig[currentIdx];
+            document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
+            drawScene(img, 1);
+            gsap.to("#subtitle-text", { opacity: 0, duration: 0.1, onComplete: () => {
+                document.getElementById('subtitle-text').innerText = scene.text;
+                gsap.to("#subtitle-text", { opacity: 1, duration: 0.3 });
+            }});
+        }
+
+        function handleNavigation(clientX) {
+            if (!isInGalleryMode || isTransitioning) return;
+            if (clientX < window.innerWidth / 2) {
+                currentIdx = (currentIdx - 1 + images.length) % images.length;
+            } else {
+                currentIdx = (currentIdx + 1) % images.length;
+            }
+            isTransitioning = true;
+            renderCurrentScene();
+            setTimeout(() => { isTransitioning = false; }, 250);
+        }
+
+        function exitExperience() {
+            isInGalleryMode = false;
+            stopParticles = false;
+            document.getElementById('overlay').style.display = 'flex';
+            gsap.to("#overlay", { opacity: 1, duration: 0.8 });
+            gsap.to("#photo-ui", { opacity: 0, pointerEvents: 'none', duration: 0.5 });
+            gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.style.opacity = 1;
+                currentIdx = -1;
+            }});
+            animateParticles();
+        }
+
+        window.onload = async () => {
+            await preloadAssets();
+            animateParticles();
+            startBgSlideshow();
+            const introTl = gsap.timeline();
+            introTl.to("#brand-title", { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" })
+                   .to("#sub-brand", { opacity: 0.6, duration: 1 }, "-=0.5");
+            document.getElementById('entry-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                gsap.to("#overlay", { 
+                    opacity: 0, duration: 0.8,
+                    onComplete: () => {
+                        stopParticles = true;
+                        isInGalleryMode = true;
+                        document.getElementById('overlay').style.display = 'none';
+                        document.getElementById('photo-ui').classList.remove('pointer-events-none');
+                        gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
+                        currentIdx = 0;
+                        renderCurrentScene();
+                    }
+                });
+            });
+            document.getElementById('back-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                exitExperience();
+            });
+        };
+
+        window.addEventListener('click', (e) => {
+            if (!isInGalleryMode) return;
+            if (e.target.closest('.interactive-ui')) return;
+            handleNavigation(e.clientX);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isInGalleryMode) {
+                document.body.classList.remove('cursor-prev', 'cursor-next');
+                return;
+            }
+            if (e.clientX < window.innerWidth / 2) {
+                document.body.classList.add('cursor-prev');
+                document.body.classList.remove('cursor-next');
+            } else {
+                document.body.classList.add('cursor-next');
+                document.body.classList.remove('cursor-prev');
+            }
+        });
+    </script>
+</body>
+</html>
