@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- FB / LINE 預覽設定：這在 GitHub Pages 下能 100% 發揮作用 -->
-    <meta property="og:title" content="Photo Gallery | Aventurine">
+    <!-- FB / LINE 預覽設定 -->
+    <meta property="og:title" content=" | Aventurine">
     <meta property="og:description" content="卡卡瓦夏 - 「幸運，從來不是偶然的施捨。」">
     <meta property="og:type" content="website">
-    <!-- 下方圖片為 FB 抓取的封面圖 -->
     <meta property="og:image" content="https://live.staticflickr.com/65535/55037653101_ac96d8296e_h.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -108,16 +107,6 @@
 </head>
 <body class="flex items-center justify-center">
 
-    <!-- 全域感應區：左下角隱藏訊息 (針對 Google Sites i 圖標區域擴大) -->
-    <div class="fixed bottom-0 left-0 w-80 h-48 flex items-end pl-14 pb-10 z-[100] group interactive-ui bg-transparent">
-        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-1000 delay-150 pointer-events-none">
-            <p class="text-[13px] md:text-sm text-white/30 tracking-[0.1em] md:tracking-[0.2em] leading-relaxed font-light italic">
-                相葉也想把這個移除掉，但條件不允許<br>
-                可以抖內他或許就可以移除掉了
-            </p>
-        </div>
-    </div>
-
     <!-- 首頁 Overlay -->
     <div id="overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030808] transition-all duration-1000">
         <canvas id="particle-canvas"></canvas>
@@ -143,8 +132,8 @@
 
             <div id="loading-status" class="text-[#d4af37]/40 text-[9px] tracking-[0.6em] mb-12 uppercase">Dealing the cosmic cards...</div>
             
-            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/60 hover:text-white transition-all duration-1000 tracking-[0.6em] md:tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden">
-                <span class="relative z-10 uppercase">Take the chance</span>
+            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/60 hover:text-white transition-all duration-1000 tracking-[0.6em] md:tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase">
+                <span class="relative z-10">Take the chance</span>
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#d4af37]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
             </button>
         </div>
@@ -334,14 +323,14 @@
             const imgAspect = img.width / img.height;
             const canvasAspect = canvas.width / canvas.height;
             const fitScale = 0.98;
-            let drawW, drawH;
+            let drawX, drawY, drawW, drawH;
             if (canvasAspect > imgAspect) {
                 drawH = canvas.height * fitScale; drawW = drawH * imgAspect;
             } else {
                 drawW = canvas.width * fitScale; drawH = drawW / imgAspect;
             }
-            const drawX = (canvas.width - drawW) / 2;
-            const drawY = (canvas.height - drawH) / 2;
+            drawX = (canvas.width - drawW) / 2;
+            drawY = (canvas.height - drawH) / 2;
             ctx.save(); ctx.filter = 'none'; ctx.globalAlpha = opacity;
             ctx.drawImage(img, drawX, drawY, drawW, drawH); ctx.restore();
         }
@@ -433,5 +422,4 @@
         });
     </script>
 </body>
-
 </html>
