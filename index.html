@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- FB / LINE 預覽設定 -->
-    <meta property="og:title" content=" | Aventurine">
+    <meta property="og:title" content="| Aventurine">
     <meta property="og:description" content="卡卡瓦夏 - 「幸運，從來不是偶然的施捨。」">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://live.staticflickr.com/65535/55037653101_ac96d8296e_h.jpg">
+    <meta property="og:image" content="https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
@@ -42,6 +42,16 @@
             z-index: 1;
         }
 
+        /* 膠卷雜訊層 */
+        #noise-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            opacity: 0.04;
+            pointer-events: none;
+        }
+
         #particle-canvas { 
             position: absolute;
             top: 0; left: 0;
@@ -69,15 +79,24 @@
             transition: opacity 2.5s ease-in-out;
         }
 
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
         .gold-glow {
             text-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 35px rgba(13, 59, 63, 0.6);
         }
 
         .aventurine-btn {
-            background: rgba(13, 59, 63, 0.2);
+            background: rgba(13, 59, 63, 0.4);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(212, 175, 55, 0.3);
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            background-image: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.1) 50%, transparent 65%);
+            background-size: 200% 100%;
+            animation: shimmer 4s infinite linear;
+            cursor: pointer !important;
         }
 
         .back-btn-style {
@@ -87,28 +106,36 @@
             opacity: 0.35;
             transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
         }
         .back-btn-style:hover {
             opacity: 1;
             border-color: rgba(212, 175, 55, 0.8);
-            background: rgba(212, 175, 55, 0.1);
+            transform: scale(1.1);
         }
         
         .cursor-prev { cursor: w-resize; }
         .cursor-next { cursor: e-resize; }
+
+        .corner-deco {
+            position: absolute;
+            width: 20px; height: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            pointer-events: none;
+            z-index: 15;
+        }
 
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="flex items-center justify-center">
 
+    <!-- 膠卷微粒畫布 -->
+    <canvas id="noise-canvas"></canvas>
+
     <!-- 首頁 Overlay -->
-    <div id="overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030808] transition-all duration-1000">
+    <div id="overlay" class="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#030808] transition-all duration-1000">
         <canvas id="particle-canvas"></canvas>
         <div id="bg-slideshow">
             <div id="slide-1" class="bg-slide"></div>
@@ -123,39 +150,44 @@
             </div>
 
             <div class="overflow-hidden px-4 mb-4 text-center">
-                <h1 id="brand-title" class="text-white text-3xl md:text-6xl lg:text-7xl font-light opacity-0 translate-y-10 tracking-[0.2em] gold-glow uppercase">
+                <h1 id="brand-title" class="text-white text-4xl md:text-6xl lg:text-7xl font-light opacity-0 translate-y-10 tracking-[0.25em] gold-glow uppercase">
                     IT'S <span class="font-serif italic font-bold">ALL</span> OR <span class="font-serif italic font-bold">NOTHING</span>
                 </h1>
             </div>
             
             <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.2em] md:tracking-[1.5em] mb-16 opacity-0 uppercase font-light">Luck is the only skill</p>
 
-            <div id="loading-status" class="text-[#d4af37]/40 text-[9px] tracking-[0.6em] mb-12 uppercase">Dealing the cosmic cards...</div>
+            <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic">Shuffling the cosmic deck...</div>
             
-            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/60 hover:text-white transition-all duration-1000 tracking-[0.6em] md:tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase">
+            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/70 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[70]">
                 <span class="relative z-10">Take the chance</span>
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#d4af37]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
             </button>
         </div>
     </div>
 
-    <!-- 照片模式 UI -->
-    <div id="photo-ui" class="ui-layer fixed inset-0 opacity-0 pointer-events-none transition-opacity duration-1000">
+    <!-- 影集 UI 層 -->
+    <div id="photo-ui" class="ui-layer fixed inset-0 opacity-0 pointer-events-none transition-opacity duration-1000 z-[80]">
+        
+        <div class="corner-deco top-6 left-6 border-r-0 border-b-0"></div>
+        <div class="corner-deco top-6 right-6 border-l-0 border-b-0"></div>
+        <div class="corner-deco bottom-6 left-6 border-r-0 border-t-0"></div>
+        <div class="corner-deco bottom-6 right-6 border-l-0 border-t-0"></div>
+
         <div class="fixed top-4 left-4 md:top-6 md:left-6 interactive-ui">
             <button id="back-btn" class="back-btn-style text-[#d4af37]" title="Leave the table">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
             </button>
         </div>
 
-        <div class="fixed top-5 right-6 md:top-7 md:right-10 text-[9px] md:text-[10px] tracking-[0.4em] text-[#d4af37]/30">
+        <div class="fixed top-5 right-6 md:top-7 md:right-10 text-[9px] md:text-[10px] tracking-[0.4em] text-[#d4af37]/30 font-bold">
             HAND <span id="current-num" class="text-white/60">00</span> / <span id="total-num">00</span>
         </div>
 
         <div class="fixed bottom-20 md:bottom-24 left-0 w-full flex justify-center px-10">
             <div id="subtitle-container" class="max-w-4xl text-center">
-                <p id="subtitle-text" class="text-white/90 text-base md:text-2xl font-light leading-relaxed opacity-0 tracking-[0.15em] md:tracking-[0.2em] italic" style="text-shadow: 0 0 15px rgba(0,0,0,1)"></p>
+                <p id="subtitle-text" class="text-white/90 text-base md:text-xl font-light leading-relaxed opacity-0 tracking-[0.2em] italic" style="text-shadow: 0 5px 15px rgba(0,0,0,1)"></p>
             </div>
         </div>
     </div>
@@ -167,6 +199,8 @@
         const ctx = canvas.getContext('2d');
         const pCanvas = document.getElementById('particle-canvas');
         const pCtx = pCanvas.getContext('2d');
+        const nCanvas = document.getElementById('noise-canvas');
+        const nCtx = nCanvas.getContext('2d');
 
         let images = [];
         let currentIdx = -1;
@@ -211,14 +245,38 @@
                     pCtx.beginPath(); pCtx.arc(0, 0, this.size * 0.7, 0, Math.PI * 2); pCtx.setLineDash([4, 4]); pCtx.stroke();
                 } else if (this.type === 'dice') {
                     pCtx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
-                    pCtx.fillStyle = '#d4af37'; pCtx.beginPath(); pCtx.arc(0, 0, 1.5, 0, Math.PI*2); pCtx.fill();
                 } else {
                     pCtx.strokeRect(-this.size/2, -this.size * 0.7, this.size, this.size * 1.4);
-                    pCtx.font = `${this.size * 0.6}px serif`; pCtx.fillStyle = '#d4af37'; pCtx.fillText('A', -this.size/4, this.size/4);
                 }
                 pCtx.restore();
             }
         }
+
+        // --- 膠卷微粒動畫 (修正 IndexSizeError) ---
+        function createNoise() {
+            // 安全檢查：若寬高為 0 則不執行
+            const w = nCanvas.width;
+            const h = nCanvas.height;
+            if (w <= 0 || h <= 0) return;
+
+            try {
+                const idata = nCtx.createImageData(w, h);
+                const buffer32 = new Uint32Array(idata.data.buffer);
+                const len = buffer32.length;
+                for (let i = 0; i < len; i++) {
+                    if (Math.random() < 0.5) buffer32[i] = 0xff000000;
+                }
+                nCtx.putImageData(idata, 0, 0);
+            } catch (e) {
+                console.warn("Noise rendering deferred:", e.message);
+            }
+        }
+
+        function animateNoise() {
+            createNoise();
+            setTimeout(() => requestAnimationFrame(animateNoise), 50);
+        }
+
         function initParticles() {
             particles = [];
             for (let i = 0; i < (window.innerWidth < 768 ? 30 : 55); i++) particles.push(new Particle());
@@ -235,9 +293,9 @@
             { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。」' },
             { url: 'https://live.staticflickr.com/65535/55037642501_f0801b7f90_h.jpg', text: '「這張牌，賭上我的靈魂與未來。」' },
             { url: 'https://live.staticflickr.com/65535/55037821968_6bb08b5b77_h.jpg', text: '「命運從不憐憫弱者，它只眷顧敢於 All-in 的瘋子。」' },
-            { url: 'https://live.staticflickr.com/65535/55037986890_aac979b78f_h.jpg', text: '當金色的雨落下時，遊戲才剛要開始。」' },
+            { url: 'https://live.staticflickr.com/65535/55037986890_aac979b78f_h.jpg', text: '「當金色的雨落下時，遊戲才剛要開始。」' },
             { url: 'https://live.staticflickr.com/65535/55037987335_be8b101116_h.jpg', text: '「勝負已分。而你，是我的戰利品。」' },
-            { url: 'https://live.staticflickr.com/65535/55036740552_22f10474b4_h.jpg', text: '煙霧繚繞間，我彷彿看見了死神的微笑。」' },
+            { url: 'https://live.staticflickr.com/65535/55036740552_22f10474b4_h.jpg', text: '「煙霧繚繞間，我彷彿看見了死神的微笑。」' },
             { url: 'https://live.staticflickr.com/65535/55037897854_8e08759781_h.jpg', text: '「這張王牌，是為了與你重逢而留的。」' },
             { url: 'https://live.staticflickr.com/65535/55037644446_d96c896ab6_h.jpg', text: '「願母神賜予我，最後的幸運。」' },
             { url: 'https://live.staticflickr.com/65535/55037988640_4f2af36145_h.jpg', text: '「籌碼已經落下。」' },
@@ -266,7 +324,8 @@
         ];
 
         function resize() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            canvas.width = nCanvas.width = window.innerWidth;
+            canvas.height = nCanvas.height = window.innerHeight;
             pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight;
             initParticles();
             if (currentIdx >= 0) drawScene(images[currentIdx], 1);
@@ -283,16 +342,7 @@
                     img.src = scene.url;
                 });
             });
-            const bgPromises = bgImagesUrls.map((url) => {
-                return new Promise((resolve) => {
-                    const img = new Image(); img.crossOrigin = "anonymous";
-                    img.onload = () => resolve(img);
-                    img.onerror = () => resolve(null);
-                    img.src = url;
-                });
-            });
             images = await Promise.all(imgPromises);
-            await Promise.all(bgPromises);
             document.getElementById('total-num').innerText = String(images.length).padStart(2, '0');
             document.getElementById('loading-status').classList.add('hidden');
             document.getElementById('entry-btn').classList.remove('hidden');
@@ -323,15 +373,15 @@
             const imgAspect = img.width / img.height;
             const canvasAspect = canvas.width / canvas.height;
             const fitScale = 0.98;
-            let drawX, drawY, drawW, drawH;
+            let drawW, drawH;
             if (canvasAspect > imgAspect) {
                 drawH = canvas.height * fitScale; drawW = drawH * imgAspect;
             } else {
                 drawW = canvas.width * fitScale; drawH = drawW / imgAspect;
             }
-            drawX = (canvas.width - drawW) / 2;
-            drawY = (canvas.height - drawH) / 2;
-            ctx.save(); ctx.filter = 'none'; ctx.globalAlpha = opacity;
+            const drawX = (canvas.width - drawW) / 2;
+            const drawY = (canvas.height - drawH) / 2;
+            ctx.save(); ctx.globalAlpha = opacity;
             ctx.drawImage(img, drawX, drawY, drawW, drawH); ctx.restore();
         }
 
@@ -341,10 +391,12 @@
             const scene = sceneConfig[currentIdx];
             document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
             drawScene(img, 1);
-            gsap.to("#subtitle-text", { opacity: 0, duration: 0.1, onComplete: () => {
-                document.getElementById('subtitle-text').innerText = scene.text;
-                gsap.to("#subtitle-text", { opacity: 1, duration: 0.3 });
-            }});
+            gsap.fromTo("#subtitle-text", 
+                { opacity: 0, y: 15 }, 
+                { opacity: 1, y: 0, duration: 1.2, ease: "power2.out", 
+                  onStart: () => { document.getElementById('subtitle-text').innerText = scene.text; } 
+                }
+            );
         }
 
         function handleNavigation(clientX) {
@@ -356,19 +408,17 @@
             }
             isTransitioning = true;
             renderCurrentScene();
-            setTimeout(() => { isTransitioning = false; }, 250);
+            setTimeout(() => { isTransitioning = false; }, 300);
         }
 
         function exitExperience() {
-            isInGalleryMode = false;
-            stopParticles = false;
+            isInGalleryMode = false; stopParticles = false;
             document.getElementById('overlay').style.display = 'flex';
             gsap.to("#overlay", { opacity: 1, duration: 0.8 });
             gsap.to("#photo-ui", { opacity: 0, pointerEvents: 'none', duration: 0.5 });
             gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                canvas.style.opacity = 1;
-                currentIdx = -1;
+                canvas.style.opacity = 1; currentIdx = -1;
             }});
             animateParticles();
         }
@@ -376,10 +426,11 @@
         window.onload = async () => {
             await preloadAssets();
             animateParticles();
+            animateNoise();
             startBgSlideshow();
-            const introTl = gsap.timeline();
-            introTl.to("#brand-title", { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" })
-                   .to("#sub-brand", { opacity: 0.6, duration: 1 }, "-=0.5");
+            gsap.to("#brand-title", { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" });
+            gsap.to("#sub-brand", { opacity: 0.6, duration: 1, delay: 0.5 });
+
             document.getElementById('entry-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 gsap.to("#overlay", { 
@@ -390,14 +441,12 @@
                         document.getElementById('overlay').style.display = 'none';
                         document.getElementById('photo-ui').classList.remove('pointer-events-none');
                         gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
-                        currentIdx = 0;
-                        renderCurrentScene();
+                        currentIdx = 0; renderCurrentScene();
                     }
                 });
             });
             document.getElementById('back-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                exitExperience();
+                e.stopPropagation(); exitExperience();
             });
         };
 
