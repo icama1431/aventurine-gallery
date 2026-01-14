@@ -6,7 +6,7 @@
     
     <!-- FB / LINE 預覽設定 -->
     <meta property="og:title" content="| Aventurine">
-    <meta property="og:description" content="砂金 - 「願母神為你三度閉眼，保佑你的血脈永遠跳動。」">
+    <meta property="og:description" content="砂金">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg">
     <meta property="og:image:width" content="1200">
@@ -22,6 +22,9 @@
         :root {
             --gold: #d4af37;
             --teal: #0d3b3f;
+            --iris-size: 0px;
+            --iris-x: 50%;
+            --iris-y: 50%;
         }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -59,17 +62,26 @@
             z-index: 5;
         }
 
+        #iris-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 160;
+            pointer-events: none;
+            opacity: 0;
+        }
+
         .ui-layer { pointer-events: none; user-select: none; z-index: 80; }
         .interactive-ui { pointer-events: auto; }
         
-        #bg-slideshow {
+        #bg-slideshow, .void-bg {
             position: absolute;
             inset: 0;
             z-index: 2;
             opacity: 0.15; 
             pointer-events: none;
         }
-        .bg-slide {
+        .bg-slide, .void-slide {
             position: absolute;
             inset: 0;
             background-size: cover;
@@ -98,6 +110,36 @@
             cursor: pointer !important;
         }
 
+        /* 根據您的需求調整的按鈕背景幸運草樣式 */
+        .btn-clover-bg {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20%; 
+            height: 20%; 
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+            z-index: 0;
+        }
+
+        /* 虛無層：菱形遮罩 */
+        #void-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            display: none;
+            filter: grayscale(1) brightness(0.7);
+            pointer-events: none;
+            clip-path: polygon(
+                var(--iris-x) calc(var(--iris-y) - var(--iris-size)), 
+                calc(var(--iris-x) + var(--iris-size) * 0.85) var(--iris-y), 
+                var(--iris-x) calc(var(--iris-y) + var(--iris-size)), 
+                calc(var(--iris-x) - var(--iris-size) * 0.85) var(--iris-y)
+            );
+        }
+
         .back-btn-style {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(12px);
@@ -108,104 +150,59 @@
             width: 42px; height: 42px;
             display: flex; align-items: center; justify-content: center;
         }
-        .back-btn-style:hover {
-            opacity: 1;
-            border-color: rgba(212, 175, 55, 0.8);
-            transform: scale(1.1);
-        }
-        
-        .cursor-prev { cursor: w-resize; }
-        .cursor-next { cursor: e-resize; }
 
-        .corner-deco {
-            position: absolute;
-            width: 24px; height: 24px;
-            border: 1px solid rgba(212, 175, 55, 0.15);
-            pointer-events: none;
-            z-index: 15;
-        }
-
-        #monitor-panel {
-            position: fixed;
-            bottom: 80px;
-            left: 20px;
-            width: 260px;
-            max-height: 400px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            z-index: 999;
-            color: white;
-            font-size: 10px;
-            overflow-y: auto;
-            display: none;
-        }
+        /* 最終黑白鎖定狀態 */
+        .is-void #overlay { filter: grayscale(1) brightness(0.75); }
+        .is-void .gold-glow { text-shadow: 0 0 10px rgba(255,255,255,0.3); color: #ccc; }
+        .is-void #particle-canvas { display: none; } 
+        .is-void .btn-clover-bg { opacity: 0.05; } 
 
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="flex items-center justify-center">
 
+    <canvas id="iris-canvas"></canvas>
     <canvas id="noise-canvas"></canvas>
 
-    <!-- 資源監控面板 -->
-    <div id="monitor-panel" class="p-4 font-mono">
-        <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-            <span class="text-[#d4af37] font-bold uppercase tracking-widest text-[11px]">Asset Inspector</span>
-            <span id="load-count" class="text-white/50">0/0</span>
-        </div>
-        <div id="progress-bar-container" class="w-full h-1 bg-white/10 mb-4 overflow-hidden">
-            <div id="progress-bar-fill" class="h-full bg-[#d4af37] transition-all duration-300" style="width: 0%"></div>
-        </div>
-        <div id="monitor-list" class="space-y-1"></div>
-    </div>
-
-    <!-- 監控開關 -->
-    <button id="monitor-toggle" class="fixed bottom-6 left-6 w-10 h-10 bg-black/50 border border-[#d4af37]/30 rounded-full z-[1000] flex items-center justify-center text-[#d4af37] opacity-20 hover:opacity-100 transition-opacity interactive-ui">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-    </button>
-
-    <!-- 首頁 Overlay -->
-    <div id="overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#030808] transition-all duration-1000">
+    <!-- 彩色首頁層 -->
+    <div id="overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#030808]">
         <canvas id="particle-canvas"></canvas>
         <div id="bg-slideshow">
             <div id="slide-1" class="bg-slide"></div>
             <div id="slide-2" class="bg-slide"></div>
         </div>
-
-        <div class="relative z-10 flex flex-col items-center px-6 text-center">
+        <div class="ui-content relative z-10 flex flex-col items-center px-6 text-center">
             <div class="flex items-center gap-6 mb-6 opacity-40">
                 <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
-                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1.2em] uppercase font-bold">The Strategic Gamble</p>
+                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1.2em] uppercase font-bold text-center">The Strategic Gamble</p>
                 <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
             </div>
-
             <div class="overflow-hidden px-4 mb-4">
-                <h1 id="brand-title" class="text-white text-4xl md:text-6xl lg:text-7xl font-light opacity-0 translate-y-10 tracking-[0.25em] gold-glow uppercase">
+                <h1 class="brand-title-text text-white text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.25em] gold-glow uppercase">
                     IT'S <span class="font-serif italic font-bold">ALL</span> OR <span class="font-serif italic font-bold">NOTHING</span>
                 </h1>
             </div>
-            
-            <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.5em] mb-16 opacity-0 uppercase font-light">Luck is the only skill</p>
-
-            <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic">Decrypting the cosmic deck...</div>
-            
-            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[110]">
-                <span class="relative z-10">Take the chance</span>
-            </button>
+            <p class="sub-brand-text text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.5em] mb-16 uppercase font-light text-center">Luck is the only skill</p>
+            <div class="loading-status-text text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic text-center">Decrypting the cosmic deck...</div>
+            <div class="entry-btn-container hidden">
+                <button class="entry-btn-el interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[110]">
+                    <div class="btn-clover-bg">
+                        <svg viewBox="0 0 477.959 477.959" fill="white"><path d="M238.421,165.792c0,0,54.115-84.598,18.411-143.04C243.147,0.356,213.901-6.707,191.505,6.976c-16.049,9.805-24.223,27.601-22.533,45.14c-14.836-9.507-34.4-10.355-50.449-0.552c-22.396,13.683-29.459,42.93-15.777,65.327C138.452,175.333,238.421,165.792,238.421,165.792z"/><path d="M260.801,202.423c0,0-54.115,84.596-18.41,143.04c13.684,22.396,42.932,29.46,65.328,15.775c16.047-9.804,24.223-27.6,22.53-45.14c14.837,9.509,34.402,10.357,50.449,0.553c22.396-13.683,29.459-42.931,15.777-65.325C360.771,192.881,260.801,202.423,260.801,202.423z"/><path d="M426.744,126.001c-9.805-16.049-27.602-24.223-45.141-22.533c9.508-14.836,10.357-34.4,0.553-50.448c-13.684-22.396-42.93-29.46-65.326-15.778c-58.44,35.706-48.903,135.676-48.903,135.676s84.598,54.115,143.041,18.41C433.361,177.645,440.426,148.397,426.744,126.001z"/><path d="M117.62,264.748c-9.508,14.835-10.357,34.4-0.551,50.447c13.682,22.396,42.93,29.459,65.324,15.777c58.445-35.705,48.904-135.676,48.904-135.676s-84.596-54.115-143.041-18.408c-22.395,13.682-29.459,42.93-15.775,65.326C82.286,258.263,100.081,266.437,117.62,264.748z"/><path d="M216.699,316.855c-0.652,1.458-1.324,3.08-2.141,4.81c-0.85,1.716-1.701,3.586-2.77,5.514c-2.033,3.893-4.572,8.14-7.598,12.561c-3.018,4.425-6.537,9.018-10.539,13.598c-4,4.585-8.482,9.155-13.365,13.593c-4.879,4.438-10.156,8.74-15.711,12.836c-5.566,4.083-11.416,7.953-17.402,11.58c-11.975,7.257-24.551,13.476-36.604,18.621c-12.051,5.156-23.588,9.239-33.539,12.366c-9.957,3.128-18.332,5.291-24.117,6.646c-2.891,0.676-5.137,1.151-6.613,1.443c-0.709,0.131-1.254,0.232-1.619,0.299c-0.191,0.037-0.25,0.036-0.303,0.041c-0.051,0.003-0.15,0.024-0.137,0.021l14.199,47.176c0,0,0.287-0.111,0.842-0.329c0.475-0.201,1.182-0.5,2.104-0.888c1.773-0.77,4.283-1.895,7.404-3.366c6.24-2.947,14.922-7.3,25.004-13.005c10.078-5.706,21.563-12.766,33.34-21.082c11.775-8.303,23.848-17.866,35.027-28.396c5.592-5.263,10.967-10.746,15.982-16.385c5.006-5.648,9.652-11.443,13.828-17.263c4.18-5.82,7.881-11.665,11.053-17.375c3.176-5.705,5.814-11.273,7.957-16.503c2.145-5.229,3.809-10.114,5.027-14.499c0.66-2.174,1.123-4.257,1.604-6.149c0.449-1.906,0.777-3.676,1.113-5.255c0.561-3.192,0.969-5.687,1.154-7.404c0.215-1.707,0.328-2.617,0.328-2.617s-0.303,0.866-0.867,2.491C218.809,311.561,217.889,313.908,216.699,316.855z"/></svg>
+                    </div>
+                    <span class="relative z-10">Take the chance</span>
+                </button>
+            </div>
         </div>
+    </div>
+
+    <!-- 黑白虛無層 -->
+    <div id="void-layer" class="flex flex-col items-center justify-center bg-[#030808]">
+        <div class="void-ui-content relative z-10 flex flex-col items-center px-6 text-center w-full h-full justify-center"></div>
     </div>
 
     <!-- 影集 UI 層 -->
     <div id="photo-ui" class="ui-layer fixed inset-0 opacity-0 pointer-events-none transition-opacity duration-1000">
-        <div class="corner-deco top-8 left-8 border-r-0 border-b-0"></div>
-        <div class="corner-deco top-8 right-8 border-l-0 border-b-0"></div>
-        <div class="corner-deco bottom-8 left-8 border-r-0 border-t-0"></div>
-        <div class="corner-deco bottom-8 right-8 border-l-0 border-t-0"></div>
-
         <div class="fixed top-6 left-6 interactive-ui">
             <button id="back-btn" class="back-btn-style text-[#d4af37]" title="Leave the table">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -213,13 +210,11 @@
                 </svg>
             </button>
         </div>
-
         <div class="fixed top-7 right-8 text-[10px] md:text-[11px] tracking-[0.4em] text-[#d4af37]/30 font-bold">
             HAND <span id="current-num" class="text-white/60">00</span> / <span id="total-num">00</span>
         </div>
-
         <div class="fixed bottom-24 left-0 w-full flex justify-center px-10">
-            <div id="subtitle-container" class="max-w-5xl text-center">
+            <div id="subtitle-container" class="max-w-4xl text-center">
                 <p id="subtitle-text" class="text-white/90 text-base md:text-xl lg:text-2xl font-light leading-relaxed opacity-0 tracking-[0.12em] italic" style="text-shadow: 0 5px 20px rgba(0,0,0,1)"></p>
             </div>
         </div>
@@ -228,18 +223,43 @@
     <canvas id="main-canvas"></canvas>
 
     <script>
+        // --- 向量圖資產 (整合您提供的 5 組骰子並移除 d6) ---
+        const SVG_STRINGS = {
+            heart: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 28.5L14.1 26.8C7.1 20.4 2.5 16.2 2.5 11C2.5 6.8 5.8 3.5 10 3.5C12.4 3.5 14.7 4.6 16.2 6.4C17.7 4.6 20 3.5 22.4 3.5C26.6 3.5 29.9 6.8 29.9 11C29.9 16.2 25.3 20.4 18.3 26.8L16 28.5Z" fill="#ff3b3b"/></svg>`,
+            spade: `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 0L1.03553 6.96447C0.372492 7.62751 0 8.52678 0 9.46447V9.54584C0 11.4535 1.54648 13 3.45416 13C4.1361 13 4.80278 12.7981 5.37019 12.4199L7.125 11.25L6 15V16H10V15L8.875 11.25L10.6298 12.4199C11.1972 12.7981 11.8639 13 12.5458 13C14.4535 13 16 11.4535 16 9.54584V9.46447C16 8.52678 15.6275 7.62751 14.9645 6.96447L8 0Z" fill="#1a1a1a" stroke="#d4af37" stroke-width="0.5"/></svg>`,
+            diamond: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M431.684,252.936c-40.578-32.779-150.62-185.32-171.561-247.398C258.899,1.913,257.845,0,255.988,0s-2.894,1.913-4.11,5.538C230.92,67.616,120.894,220.157,80.308,252.936c-1.053,0.843-1.946,2.44-1.946,3.064s0.893,2.222,1.946,3.057c40.586,32.778,150.612,185.319,171.57,247.406c1.216,3.624,2.278,5.537,4.11,5.537s2.911-1.913,4.135-5.537c20.941-62.087,130.983-214.628,171.561-247.406c1.046-0.835,1.954-2.432,1.954-3.057C433.638,255.376,432.73,253.778,431.684,252.936z" fill="#d4af37"/></svg>`,
+            club: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M368.004,193.98c-13.813,0-27.05,2.471-39.295,6.985c25.007-20.845,40.926-52.223,40.926-87.324 C369.635,50.869,318.766,0,256.001,0c-62.756,0-113.649,50.869-113.649,113.641c0,35.101,15.927,66.471,40.934,87.316 c-12.24-4.506-25.474-6.977-39.278-6.977c-62.764,0-113.644,50.877-113.644,113.641c0,62.764,50.88,113.642,113.644,113.642 c40.261,0,75.527-21.004,95.711-52.58C235.026,416.526,222.073,480.4,187.313,512c68.688,0,68.688,0,68.688,0s0,0,68.696,0 c-34.764-31.6-47.717-95.474-52.405-143.317c20.18,31.576,55.45,52.58,95.711,52.58c62.76,0,113.633-50.878,113.633-113.642 C481.637,244.857,430.764,193.98,368.004,193.98z" fill="#d4af37"/></svg>`,
+            clover3: `<svg viewBox="0 0 28.6 28.6" xmlns="http://www.w3.org/2000/svg"><path d="M13.6,12c0.3,0.3,0.9,0.3,1.2,0c1.1-1.1,3.4-3.4,4-4.3c0.8-1.3,1.6-2.3,1.6-4.2s-1.4-3.4-3.3-3.4c-1.3,0-2.4,0.7-3,1.8C13.5,0.7,12.4,0,11.1,0C9.2,0,7.7,1.5,7.7,3.3s0.8,2.9,1.6,4.2C10.1,8.5,12.5,10.8,13.6,12z M13,12.9c-1.4-0.7-4.3-2.2-5.3-2.5c-1.4-0.4-2.7-0.8-4.5-0.3c-1.7,0.5-2.7,2.4-2.2,4.2c0.3,1.2,1.4,2,2.6,2.3c-0.8,0.8-1.2,2.1-0.8,3.4c0.5,1.7,2.4,2.7,4.2,2.2c1.7-0.5,2.5-1.6,3.5-2.8c0.6-0.8,2.2-3.7,2.9-5.1C13.6,13.7,13.4,13.2,13,12.9z M25.5,10c-1.7-0.5-3-0.0-4.5,0.3c-1,0.2-3.9,1.8-5.3,2.5c-0.4,0.2-0.6,0.7-0.3,1.2c0.7,1.4,2.2,4.3,2.9,5.1c0.9,1.1,1.7,2.3,3.5,2.8c1.7,0.5,3.6-0.4,4.2-2.2c0.3-1.2,0.0-2.5-0.8-3.4c1.2-0.2,2.2-1,2.6-2.3C28.3,12.5,27.3,10.6,25.5,10z M17.5,28.3c0.3-0.5,0.7-1.1,1.1-1.7c0.1-0.2,0.1-0.6-0.0-0.9c-2.6-2.9-3.5-10-3.5-10c-0.0-0.3-0.3-0.6-0.7-0.7c-0.4-0.0-0.8,0.2-0.8,0.7c0,0-0.0,0.8-0.1,2.1c-0.0,0.5-0.2,7.1,3,10.6C16.8,28.7,17.3,28.6,17.5,28.3z" fill="#d4af37"/></svg>`,
+            clover4: `<svg viewBox="0 0 477.959 477.959" xmlns="http://www.w3.org/2000/svg"><g fill="#d4af37"><path d="M238.421,165.792c0,0,54.115-84.598,18.411-143.04C243.147,0.356,213.901-6.707,191.505,6.976c-16.049,9.805-24.223,27.601-22.533,45.14c-14.836-9.507-34.4-10.355-50.449-0.552c-22.396,13.683-29.459,42.93-15.777,65.327C138.452,175.333,238.421,165.792,238.421,165.792z"/><path d="M260.801,202.423c0,0-54.115,84.596-18.41,143.04c13.684,22.396,42.932,29.46,65.328,15.775c16.047-9.804,24.223-27.6,22.53-45.14c14.837,9.509,34.402,10.357,50.449,0.553c22.396-13.683,29.459-42.931,15.777-65.325C360.771,192.881,260.801,202.423,260.801,202.423z"/><path d="M426.744,126.001c-9.805-16.049-27.602-24.223-45.141-22.533c9.508-14.836,10.357-34.4,0.553-50.448c-13.684-22.396-42.93-29.46-65.326-15.778c-58.44,35.706-48.903,135.676-48.903,135.676s84.598,54.115,143.041,18.41C433.361,177.645,440.426,148.397,426.744,126.001z"/><path d="M117.62,264.748c-9.508,14.835-10.357,34.4-0.551,50.447c13.682,22.396,42.93,29.459,65.324,15.777c58.445-35.705,48.904-135.676,48.904-135.676s-84.596-54.115-143.041-18.408c-22.395,13.682-29.459,42.93-15.775,65.326C82.286,258.263,100.081,266.437,117.62,264.748z"/><path d="M216.699,316.855c-0.652,1.458-1.324,3.08-2.141,4.81c-0.85,1.716-1.701,3.586-2.77,5.514c-2.033,3.893-4.572,8.14-7.598,12.561c-3.018,4.425-6.537,9.018-10.539,13.598c-4,4.585-8.482,9.155-13.365,13.593c-4.879,4.438-10.156,8.74-15.711,12.836c-5.566,4.083-11.416,7.953-17.402,11.58c-11.975,7.257-24.551,13.476-36.604,18.621c-12.051,5.156-23.588,9.239-33.539,12.366c-9.957,3.128-18.332,5.291-24.117,6.646c-2.891,0.676-5.137,1.151-6.613,1.443c-0.709,0.131-1.254,0.232-1.619,0.299c-0.191,0.037-0.25,0.036-0.303,0.041c-0.051,0.003-0.15,0.024-0.137,0.021l14.199,47.176c0,0,0.287-0.111,0.842-0.329c0.475-0.201,1.182-0.5,2.104-0.888c1.773-0.77,4.283-1.895,7.404-3.366c6.24-2.947,14.922-7.3,25.004-13.005c10.078-5.706,21.563-12.766,33.34-21.082c11.775-8.303,23.848-17.866,35.027-28.396c5.592-5.263,10.967-10.746,15.982-16.385c5.006-5.648,9.652-11.443,13.828-17.263c4.18-5.82,7.881-11.665,11.053-17.375c3.176-5.705,5.814-11.273,7.957-16.503c2.145-5.229,3.809-10.114,5.027-14.499c0.66-2.174,1.123-4.257,1.604-6.149c0.449-1.906,0.777-3.676,1.113-5.255c0.561-3.192,0.969-5.687,1.154-7.404c0.215-1.707,0.328-2.617,0.328-2.617s-0.303,0.866-0.867,2.491C218.809,311.561,217.889,313.908,216.699,316.855z"/></g></svg>`,
+            chip: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="none" stroke="#d4af37" stroke-width="8" stroke-dasharray="12, 8"/><circle cx="50" cy="50" r="32" fill="none" stroke="#d4af37" stroke-width="2"/><circle cx="50" cy="50" r="20" fill="#d4af37" fill-opacity="0.1"/></svg>`,
+            coin: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#d4af37" fill-opacity="0.15" stroke="#d4af37" stroke-width="4"/><path d="M50 25 L65 50 L50 75 L35 50 Z" fill="#d4af37"/></svg>`,
+            // 新增骰子 1-5
+            dice1: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="#d4af37" d="M449.525,105.602L288.456,8.989C278.474,2.994,267.228,0,256,0c-11.232,0-22.476,2.994-32.46,8.989L62.469,105.602c-19.01,11.406-30.641,31.95-30.641,54.117v192.562c0,22.168,11.631,42.711,30.641,54.117l161.072,96.613C233.524,508.999,244.772,512,256,512c11.228,0,22.474-3.001,32.456-8.989l161.069-96.613c19.012-11.406,30.647-31.95,30.647-54.117V159.719C480.172,137.552,468.537,117.008,449.525,105.602z M250.593,492.733c-6.026-0.745-11.927-2.719-17.32-5.948L72.203,390.172c-13.31-7.99-21.453-22.37-21.453-37.891V159.719c0-6.022,1.238-11.862,3.514-17.233l196.328,117.76V492.733z M59.663,133.114c3.366-4.464,7.596-8.318,12.541-11.285l161.069-96.613c7.002-4.196,14.856-6.291,22.728-6.291c7.868,0,15.726,2.095,22.725,6.291l161.065,96.613c4.955,2.967,9.184,6.821,12.541,11.285L256,250.881L59.663,133.114z M461.247,352.281c0,15.521-8.15,29.901-21.456,37.891l-161.065,96.613c-5.391,3.229-11.296,5.203-17.321,5.948V260.246l196.325-117.76c2.282,5.37,3.518,11.211,3.518,17.233V352.281z"/><circle cx="202" cy="285" r="15" fill="#d4af37"/><circle cx="89" cy="340" r="15" fill="#d4af37"/><circle cx="145" cy="320" r="15" fill="#d4af37"/><circle cx="418" cy="225" r="15" fill="#d4af37"/><circle cx="305" cy="285" r="15" fill="#d4af37"/><circle cx="418" cy="335" r="15" fill="#d4af37"/><circle cx="305" cy="395" r="15" fill="#d4af37"/><path fill="#d4af37" d="M284.992,107.012c-15.726-11.648-41.627-11.936-57.86-0.658c-16.227,11.285-16.643,29.875-0.913,41.509c15.726,11.648,41.63,11.943,57.867,0.658C300.312,137.243,300.722,118.654,284.992,107.012z"/></svg>`,
+            dice2: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="#d4af37" d="M449.528,105.602L288.459,8.989C278.469,2.994,267.232,0,255.993,0c-11.225,0-22.463,2.994-32.452,8.989L62.471,105.602c-19.012,11.406-30.64,31.95-30.64,54.117v192.562c0,22.168,11.628,42.711,30.64,54.117l161.069,96.613c9.989,5.988,21.228,8.989,32.452,8.989c11.239,0,22.476-3.001,32.466-8.989l161.069-96.613c19.013-11.406,30.64-31.95,30.64-54.117V159.719C480.168,137.552,468.541,117.008,449.528,105.602z M250.595,492.733c-6.028-0.745-11.936-2.712-17.321-5.948L72.206,390.172c-13.306-7.99-21.456-22.37-21.456-37.891V159.719c0-6.022,1.242-11.862,3.518-17.233l196.328,117.76V492.733z M59.665,133.114c3.37-4.464,7.593-8.318,12.54-11.285l161.069-96.613c6.996-4.196,14.85-6.291,22.718-6.291c7.882,0,15.737,2.095,22.732,6.291l161.069,96.613c4.942,2.967,9.171,6.821,12.54,11.285L255.993,250.881L59.665,133.114z M461.249,352.281c0,15.521-8.15,29.901-21.456,37.891l-161.069,96.613c-5.397,3.236-11.292,5.203-17.32,5.948V260.246l196.328-117.76c2.282,5.37,3.518,11.211,3.518,17.233V352.281z"/><circle cx="350" cy="128" r="15" fill="#d4af37"/><circle cx="163" cy="125" r="15" fill="#d4af37"/><circle cx="89" cy="235" r="15" fill="#d4af37"/><circle cx="202" cy="295" r="15" fill="#d4af37"/><circle cx="89" cy="345" r="15" fill="#d4af37"/><circle cx="202" cy="405" r="15" fill="#d4af37"/><circle cx="145" cy="320" r="15" fill="#d4af37"/><circle cx="414" cy="215" r="15" fill="#d4af37"/><circle cx="414" cy="285" r="15" fill="#d4af37"/><circle cx="316" cy="290" r="15" fill="#d4af37"/><circle cx="414" cy="350" r="15" fill="#d4af37"/><circle cx="316" cy="405" r="15" fill="#d4af37"/><circle cx="317" cy="340" r="15" fill="#d4af37"/></svg>`,
+            dice3: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="#d4af37" d="M449.531,105.602L288.463,8.989C278.473,2.994,267.235,0,256.01,0c-11.238,0-22.483,2.994-32.466,8.989L62.475,105.602c-19.012,11.406-30.647,31.949-30.647,54.117v192.562c0,22.168,11.635,42.711,30.647,54.117l161.069,96.613c9.982,5.988,21.228,8.989,32.466,8.989c11.226,0,22.463-3.001,32.453-8.989l161.069-96.613c19.013-11.406,30.64-31.95,30.64-54.117V159.719C480.172,137.551,468.544,117.008,449.531,105.602z M250.599,492.733c-6.028-0.745-11.929-2.713-17.32-5.949L72.209,390.171c-13.306-7.989-21.456-22.369-21.456-37.89V159.719c0-6.022,1.235-11.862,3.518-17.234l196.328,117.76V492.733z M59.669,133.114c3.364-4.464,7.593-8.318,12.54-11.286l161.069-96.613c6.995-4.196,14.85-6.29,22.731-6.29c7.868,0,15.724,2.095,22.718,6.29l161.069,96.613c4.942,2.968,9.184,6.821,12.54,11.286L256.01,250.881L59.669,133.114z M461.253,352.281c0,15.521-8.15,29.901-21.456,37.89l-161.069,96.613c-5.397,3.236-11.292,5.204-17.32,5.949V260.246l196.328-117.76c2.282,5.371,3.518,11.212,3.518,17.234V352.281z"/><circle cx="367" cy="128" r="14" fill="#d4af37"/><circle cx="150" cy="125" r="14" fill="#d4af37"/><circle cx="258" cy="128" r="14" fill="#d4af37"/><circle cx="89" cy="235" r="14" fill="#d4af37"/><circle cx="202" cy="295" r="14" fill="#d4af37"/><circle cx="89" cy="345" r="14" fill="#d4af37"/><circle cx="202" cy="405" r="14" fill="#d4af37"/><path fill="#d4af37" d="M361.948,282.911c-17.858,9.728-32.319,32.084-32.319,49.928c0,17.85,14.461,24.437,32.319,14.709c17.844-9.734,32.319-32.09,32.319-49.941C394.267,279.762,379.792,273.176,361.948,282.911z"/></svg>`,
+            dice4: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="#d4af37" d="M103.958,265.785c12.574,5.162,23.463-1.538,24.316-14.964c0.852-13.427-8.654-28.492-21.221-33.654c-12.568-5.156-23.457,1.537-24.31,14.964C81.891,245.557,91.397,260.629,103.958,265.785z"/><circle cx="202" cy="405" r="14" fill="#d4af37"/><path fill="#d4af37" d="M449.531,105.602L288.463,8.989C278.473,2.994,267.235,0,256.01,0c-11.238,0-22.483,2.994-32.466,8.989L62.475,105.602c-19.012,11.406-30.647,31.949-30.647,54.117v192.562c0,22.168,11.634,42.711,30.647,54.117l161.069,96.613c9.982,5.995,21.228,8.989,32.466,8.989c11.225,0,22.464-3.001,32.453-8.989l161.069-96.613c19.012-11.406,30.64-31.95,30.64-54.117V159.719C480.171,137.551,468.544,117.008,449.531,105.602z M250.599,492.733c-6.028-0.745-11.929-2.719-17.32-5.949L72.21,390.164c-13.306-7.982-21.456-22.362-21.456-37.884V159.719c0-6.022,1.236-11.862,3.518-17.234l196.328,117.767V492.733z M59.669,133.114c3.363-4.464,7.593-8.318,12.541-11.286l161.069-96.613c6.996-4.196,14.85-6.29,22.731-6.29c7.869,0,15.723,2.095,22.718,6.29l161.069,96.613c4.941,2.968,9.171,6.821,12.541,11.286L256.01,250.881L59.669,133.114z M461.253,352.281c0,15.521-8.15,29.901-21.456,37.884l-161.069,96.62c-5.397,3.23-11.292,5.21-17.32,5.949v-232.48l196.328-117.767c2.282,5.371,3.518,11.212,3.518,17.234V352.281z"/><circle cx="255" cy="55" r="14" fill="#d4af37"/><circle cx="362" cy="125" r="14" fill="#d4af37"/><circle cx="150" cy="123" r="14" fill="#d4af37"/><circle cx="252" cy="194" r="14" fill="#d4af37"/><circle cx="418" cy="225" r="14" fill="#d4af37"/><circle cx="305" cy="285" r="14" fill="#d4af37"/><circle cx="418" cy="335" r="14" fill="#d4af37"/><circle cx="305" cy="395" r="14" fill="#d4af37"/><circle cx="361" cy="310" r="14" fill="#d4af37"/></svg>`,
+            dice5: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="#d4af37" d="M412.578,198.174c-11.158,6.083-20.201,20.053-20.201,31.21c0,11.151,9.043,15.266,20.201,9.191c11.15-6.082,20.2-20.06,20.2-31.211C432.778,196.207,423.728,192.091,412.578,198.174z"/><circle cx="412" cy="285" r="14" fill="#d4af37"/><circle cx="314" cy="285" r="14" fill="#d4af37"/><circle cx="412" cy="350" r="14" fill="#d4af37"/><circle cx="314" cy="405" r="14" fill="#d4af37"/><circle cx="315" cy="340" r="14" fill="#d4af37"/><path fill="#d4af37" d="M449.528,105.602L288.466,8.989C278.476,2.994,267.232,0,256,0c-11.225,0-22.476,2.994-32.46,8.989L62.472,105.602c-19.012,11.406-30.647,31.949-30.647,54.117v192.562c0,22.168,11.634,42.711,30.647,54.117l161.069,96.613C233.524,508.999,244.775,512,256,512c11.232,0,22.476-3.001,32.466-8.989l161.062-96.613c19.006-11.406,30.647-31.95,30.647-54.117V159.719C480.175,137.551,468.534,117.008,449.528,105.602z M250.589,492.733c-6.016-0.745-11.923-2.719-17.314-5.949L72.206,390.171c-13.313-7.989-21.456-22.369-21.456-37.89V159.719c0-6.022,1.242-11.862,3.512-17.234l196.328,117.76V492.733z M59.658,133.114c3.371-4.464,7.6-8.318,12.548-11.286l161.069-96.613c6.996-4.196,14.857-6.29,22.725-6.29c7.868,0,15.723,2.095,22.725,6.29l161.068,96.613c4.948,2.968,9.177,6.821,12.547,11.286L256,250.881L59.658,133.114z M461.244,352.281c0,15.521-8.137,29.901-21.45,37.89l-161.068,96.613c-5.391,3.23-11.292,5.204-17.314,5.949V260.246l196.328-117.76c2.269,5.371,3.505,11.212,3.505,17.234V352.281z"/><circle cx="255" cy="55" r="14" fill="#d4af37"/><circle cx="362" cy="125" r="14" fill="#d4af37"/><circle cx="150" cy="123" r="14" fill="#d4af37"/><circle cx="252" cy="194" r="14" fill="#d4af37"/><circle cx="89" cy="248" r="14" fill="#d4af37"/><circle cx="202" cy="422" r="14" fill="#d4af37"/><circle cx="145" cy="335" r="14" fill="#d4af37"/></svg>`
+        };
+
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d', { alpha: false });
         const pCanvas = document.getElementById('particle-canvas');
         const pCtx = pCanvas.getContext('2d');
         const nCanvas = document.getElementById('noise-canvas');
         const nCtx = nCanvas.getContext('2d');
+        const iCanvas = document.getElementById('iris-canvas');
+        const iCtx = iCanvas.getContext('2d');
 
         let images = [];
+        let svgImages = {}; 
         let currentIdx = -1;
         let isTransitioning = false;
         let stopParticles = false;
         let isInGalleryMode = false;
+        let isFourLeafOnScreen = false;
+        
+        let isVoidMode = false; 
+        let isVoidTransitioning = false; 
 
         const bgImagesUrls = [
             'https://live.staticflickr.com/65535/55036747752_e3495334e3_h.jpg',
@@ -248,7 +268,6 @@
         ];
         let currentBgIdx = 0;
 
-        // --- 劇情台詞配置 (砂金精選) ---
         const sceneConfig = [
             { url: 'https://live.staticflickr.com/65535/55036738467_6e8273bf12_h.jpg', text: '「幸運，不過是命運那卑微的影子。」' },
             { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。這是我——埃維金人的法則。」' },
@@ -284,58 +303,167 @@
             { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭，原來是如此安靜的地方。」' }
         ];
 
-        // --- 資源監控邏輯 ---
-        function updateMonitor() {
-            const list = document.getElementById('monitor-list');
-            if (!list) return;
-            let loadedCount = 0;
-            list.innerHTML = '';
-            sceneConfig.forEach((s, i) => {
-                const img = images[i];
-                let statusText = 'Pending', colorClass = 'text-white/20';
-                if (img && img.complete && img.naturalWidth !== 0) {
-                    statusText = 'READY'; colorClass = 'text-green-500'; loadedCount++;
-                } else if (img && img.src) {
-                    statusText = 'LOADING'; colorClass = 'text-blue-400';
-                }
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center text-[9px] py-0.5';
-                item.innerHTML = `<span class="text-white/40">Hand ${String(i+1).padStart(2,'0')}</span><span class="${colorClass}">${statusText}</span>`;
-                list.appendChild(item);
+        // --- 粒子系統與分配 (移除 d6，加入新的骰子與籌碼金幣) ---
+        let particles = [];
+        const particlePool = ['heart', 'spade', 'diamond', 'club', 'chip', 'coin', 'dice1', 'dice2', 'dice3', 'dice4', 'dice5', 'clover3', 'clover3', 'clover3', 'clover3', 'clover3', 'clover3'];
+
+        async function initSvgAssets() {
+            const promises = Object.keys(SVG_STRINGS).map(key => {
+                return new Promise(resolve => {
+                    const img = new Image();
+                    const svgBlob = new Blob([SVG_STRINGS[key]], {type: 'image/svg+xml;charset=utf-8'});
+                    const url = URL.createObjectURL(svgBlob);
+                    img.onload = () => { svgImages[key] = img; resolve(); };
+                    img.src = url;
+                });
             });
-            document.getElementById('load-count').innerText = `${loadedCount}/${sceneConfig.length}`;
-            document.getElementById('progress-bar-fill').style.width = `${(loadedCount/sceneConfig.length)*100}%`;
+            await Promise.all(promises);
         }
 
-        // --- 輕量化粒子與雜訊 ---
-        let particles = [];
         class Particle {
             constructor() { this.reset(); }
             reset() {
+                if (this.type === 'clover4') isFourLeafOnScreen = false;
                 this.x = Math.random() * pCanvas.width;
                 this.y = -50 - Math.random() * 200;
-                this.size = 10 + Math.random() * 12;
-                this.speed = 0.5 + Math.random() * 0.4;
+                this.size = 18 + Math.random() * 14;
+                this.speed = 0.5 + Math.random() * 0.7;
                 this.rotation = Math.random() * Math.PI * 2;
-                this.opacity = 0.1 + Math.random() * 0.15;
+                this.rotSpeed = (Math.random() - 0.5) * 0.02;
+                this.opacity = 0.2 + Math.random() * 0.3;
+                let t;
+                if (!isFourLeafOnScreen && Math.random() < 0.5) {
+                    t = 'clover4'; isFourLeafOnScreen = true;
+                } else {
+                    t = particlePool[Math.floor(Math.random() * particlePool.length)];
+                }
+                this.type = t;
             }
-            update() { this.y += this.speed; if (this.y > pCanvas.height + 50) this.reset(); }
-            draw() {
-                pCtx.save(); pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
-                pCtx.globalAlpha = this.opacity; pCtx.strokeStyle = '#d4af37';
-                pCtx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
-                pCtx.restore();
+            update() {
+                if (isVoidTransitioning || isVoidMode) return;
+                this.y += this.speed;
+                this.rotation += this.rotSpeed;
+                if (this.y > pCanvas.height + 50) this.reset();
+            }
+            draw(targetCtx = pCtx) {
+                const img = svgImages[this.type];
+                if (!img) return;
+                targetCtx.save();
+                targetCtx.translate(this.x, this.y);
+                targetCtx.rotate(this.rotation);
+                targetCtx.globalAlpha = this.opacity;
+                targetCtx.drawImage(img, -this.size/2, -this.size/2, this.size, this.size);
+                targetCtx.restore();
             }
         }
 
+        function drawRhombus(ctx, x, y, size) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - size);
+            ctx.lineTo(x + size * 0.85, y);
+            ctx.lineTo(x, y + size);
+            ctx.lineTo(x - size * 0.85, y);
+            ctx.closePath();
+        }
+
+        // --- 虛無覺醒邏輯：兩階段演出 ---
+        function triggerIrisVoid(startX, startY) {
+            isVoidTransitioning = true; 
+            const voidLayer = document.getElementById('void-layer');
+            const overlay = document.getElementById('overlay');
+            
+            const voidContent = voidLayer.querySelector('.void-ui-content');
+            voidContent.innerHTML = overlay.querySelector('.ui-content').innerHTML;
+            const voidBtnSpan = voidContent.querySelector('button span');
+            if (voidBtnSpan) voidBtnSpan.innerText = 'ENTER THE VOID';
+            
+            const currentSlides = overlay.querySelectorAll('.bg-slide');
+            voidLayer.querySelectorAll('.void-bg').forEach(v => v.remove());
+            const vBgContainer = document.createElement('div');
+            vBgContainer.className = "void-bg absolute inset-0";
+            currentSlides.forEach(s => {
+                const clone = s.cloneNode(true);
+                clone.className = "void-slide absolute inset-0";
+                vBgContainer.appendChild(clone);
+            });
+            voidLayer.prepend(vBgContainer);
+
+            const tl = gsap.timeline();
+            const rippleData = { radius: 0, opacity: 0.5 };
+            const irisData = { size: 0 };
+            const maxD = Math.max(window.innerWidth, window.innerHeight) * 2.2;
+
+            gsap.set(iCanvas, { opacity: 1 });
+
+            // 第一幕：漣漪
+            tl.to(rippleData, {
+                radius: 450,
+                opacity: 0,
+                duration: 0.9,
+                ease: "power2.out",
+                onUpdate: () => {
+                    iCtx.clearRect(0, 0, iCanvas.width, iCanvas.height);
+                    iCtx.save();
+                    iCtx.strokeStyle = `rgba(13, 59, 63, ${rippleData.opacity})`;
+                    iCtx.lineWidth = 5;
+                    for(let i=0; i<3; i++) {
+                        const r = rippleData.radius - (i * 45);
+                        if(r > 0) {
+                            iCtx.beginPath();
+                            iCtx.arc(startX, startY, r, 0, Math.PI*2);
+                            iCtx.stroke();
+                        }
+                    }
+                    iCtx.restore();
+                }
+            });
+
+            // 第二幕：Iris 擴張 (提早 0.3 秒)
+            tl.to(irisData, {
+                size: maxD,
+                duration: 2.6,
+                ease: "expo.in",
+                onStart: () => {
+                    voidLayer.style.display = 'flex';
+                    document.documentElement.style.setProperty('--iris-x', `${startX}px`);
+                    document.documentElement.style.setProperty('--iris-y', `${startY}px`);
+                },
+                onUpdate: () => {
+                    document.documentElement.style.setProperty('--iris-size', `${irisData.size}px`);
+                    iCtx.clearRect(0, 0, iCanvas.width, iCanvas.height);
+                    iCtx.save();
+                    iCtx.globalAlpha = 0.25;
+                    iCtx.strokeStyle = '#0d3b3f';
+                    iCtx.lineWidth = 20;
+                    drawRhombus(iCtx, startX, startY, irisData.size);
+                    iCtx.stroke();
+                    iCtx.restore();
+                },
+                onComplete: () => {
+                    isVoidMode = true;
+                    isVoidTransitioning = false;
+                    particles = []; 
+                    pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); 
+                    
+                    document.body.classList.add('is-void');
+                    const realBtnSpan = document.querySelector('#overlay .entry-btn-el span');
+                    if (realBtnSpan) realBtnSpan.innerText = 'ENTER THE VOID';
+                    
+                    voidLayer.style.display = 'none';
+                    gsap.to(iCanvas, { opacity: 0, duration: 1 });
+                }
+            }, "-=0.6"); 
+        }
+
+        // --- 動畫循環 ---
         let lastNoiseTime = 0;
         function animateNoise() {
             const now = Date.now();
             if (now - lastNoiseTime > 80) { 
                 if (nCanvas.width > 0 && nCanvas.height > 0) {
                     nCtx.clearRect(0,0,nCanvas.width, nCanvas.height);
-                    for(let i=0; i<800; i++) {
-                        nCtx.fillStyle = `rgba(255,255,255,${Math.random()*0.04})`;
+                    for(let i=0; i<600; i++) {
+                        nCtx.fillStyle = `rgba(255,255,255,${Math.random()*0.03})`;
                         nCtx.fillRect(Math.random()*nCanvas.width, Math.random()*nCanvas.height, 1, 1);
                     }
                 }
@@ -345,21 +473,25 @@
         }
 
         function initParticles() {
+            if (isVoidMode) return; 
             particles = [];
-            for (let i = 0; i < 25; i++) particles.push(new Particle());
+            isFourLeafOnScreen = false;
+            const count = window.innerWidth < 768 ? 20 : 45;
+            for (let i = 0; i < count; i++) particles.push(new Particle());
         }
+
         function animateParticles() {
-            if (stopParticles) return;
+            if (stopParticles || isVoidMode) return; 
             pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
+            particles.forEach(p => { p.update(); p.draw(pCtx); });
             requestAnimationFrame(animateParticles);
         }
 
         function resize() {
             const w = window.innerWidth, h = window.innerHeight;
-            canvas.width = nCanvas.width = pCanvas.width = w;
-            canvas.height = nCanvas.height = pCanvas.height = h;
-            initParticles();
+            canvas.width = nCanvas.width = pCanvas.width = iCanvas.width = w;
+            canvas.height = nCanvas.height = pCanvas.height = iCanvas.height = h;
+            if(!isVoidMode && !isInGalleryMode) initParticles();
             if (currentIdx >= 0 && images[currentIdx]) drawScene(images[currentIdx], 1);
         }
         window.addEventListener('resize', resize);
@@ -375,13 +507,15 @@
             const firstImgPromise = new Promise(res => {
                 firstImg.onload = () => res(firstImg); firstImg.src = sceneConfig[0].url;
             });
-            await Promise.all([...bgPromises, firstImgPromise]);
-            document.getElementById('loading-status').classList.add('hidden');
-            document.getElementById('entry-btn').classList.remove('hidden');
-            setInterval(updateMonitor, 1500);
+            await Promise.all([...bgPromises, firstImgPromise, initSvgAssets()]);
+            
+            const loader = document.querySelector('.loading-status-text');
+            if (loader) loader.style.display = 'none';
+            const btnContainer = document.querySelector('.entry-btn-container');
+            if (btnContainer) btnContainer.classList.remove('hidden');
+
             sceneConfig.forEach((s, i) => {
                 const img = new Image(); img.crossOrigin = "anonymous";
-                img.onload = () => { if (isInGalleryMode) updateMonitor(); };
                 img.src = s.url; images[i] = img;
             });
         }
@@ -389,38 +523,55 @@
         function startBgSlideshow() {
             const slides = [document.getElementById('slide-1'), document.getElementById('slide-2')];
             let activeIdx = 0;
-            slides[0].style.backgroundImage = `url(${bgImagesUrls[0]})`;
-            slides[0].style.opacity = 1;
+            if (slides[0]) {
+                slides[0].style.backgroundImage = `url(${bgImagesUrls[0]})`;
+                slides[0].style.opacity = 1;
+            }
             setInterval(() => {
-                if (stopParticles) return;
+                if (stopParticles || isVoidTransitioning) return;
                 const nextBgIdx = (currentBgIdx + 1) % bgImagesUrls.length;
                 const nextSlideIdx = (activeIdx + 1) % 2;
-                slides[nextSlideIdx].style.backgroundImage = `url(${bgImagesUrls[nextBgIdx]})`;
-                slides[activeIdx].style.opacity = 0;
-                slides[nextSlideIdx].style.opacity = 1;
+                if (slides[nextSlideIdx]) {
+                    slides[nextSlideIdx].style.backgroundImage = `url(${bgImagesUrls[nextBgIdx]})`;
+                    slides[activeIdx].style.opacity = 0;
+                    slides[nextSlideIdx].style.opacity = 1;
+                }
                 currentBgIdx = nextBgIdx; activeIdx = nextSlideIdx;
             }, 6000);
         }
 
+        // --- 照片永遠彩色呈現 ---
         function drawScene(img, opacity) {
             if (!img || !img.complete || img.naturalWidth === 0) return;
             ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const imgAspect = img.naturalWidth / img.naturalHeight, canvasAspect = canvas.width / canvas.height;
+            
+            const imgAspect = img.naturalWidth / img.naturalHeight;
+            const canvasAspect = canvas.width / canvas.height;
             const fitScale = 0.98;
             let drawW, drawH;
+            
             if (canvasAspect > imgAspect) {
-                drawH = canvas.height * fitScale; drawW = drawH * imgAspect;
+                drawH = canvas.height * fitScale; 
+                drawW = drawH * imgAspect;
             } else {
-                drawW = canvas.width * fitScale; drawH = drawW / imgAspect;
+                drawW = canvas.width * fitScale; 
+                drawH = drawW / imgAspect;
             }
-            const drawX = (canvas.width - drawW) / 2, drawY = (canvas.height - drawH) / 2;
-            ctx.globalAlpha = opacity; ctx.drawImage(img, drawX, drawY, drawW, drawH); ctx.globalAlpha = 1.0;
+            
+            const drawX = (canvas.width - drawW) / 2;
+            const drawY = (canvas.height - drawH) / 2;
+            
+            ctx.globalAlpha = opacity;
+            ctx.filter = 'none'; 
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            ctx.globalAlpha = 1.0;
         }
 
         async function renderCurrentScene() {
             if (currentIdx < 0 || !images[currentIdx]) return;
             const img = images[currentIdx];
-            document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
+            const currentNumEl = document.getElementById('current-num');
+            if (currentNumEl) currentNumEl.innerText = String(currentIdx + 1).padStart(2, '0');
             try { if (img.decode) await img.decode(); } catch (e) {}
             drawScene(img, 1);
             gsap.fromTo("#subtitle-text", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 1.2, ease: "power2.out", onStart: () => { document.getElementById('subtitle-text').innerText = sceneConfig[currentIdx].text; } });
@@ -439,33 +590,51 @@
 
         function exitExperience() {
             isInGalleryMode = false; stopParticles = false;
-            document.getElementById('overlay').style.display = 'flex';
+            const overlayEl = document.getElementById('overlay');
+            if (overlayEl) overlayEl.style.display = 'flex';
             gsap.to("#overlay", { opacity: 1, duration: 0.8 });
             gsap.to("#photo-ui", { opacity: 0, duration: 0.5 });
-            gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height); canvas.style.opacity = 1; currentIdx = -1; }});
-            animateParticles();
+            gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => { 
+                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+                canvas.style.opacity = 1; currentIdx = -1; 
+            }});
+            if(!isVoidMode) animateParticles();
         }
 
         window.onload = async () => {
             resize(); animateNoise(); animateParticles(); startBgSlideshow();
             await preloadEssential();
-            gsap.to("#brand-title", { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" });
-            gsap.to("#sub-brand", { opacity: 0.6, duration: 1, delay: 0.5 });
-
-            document.getElementById('entry-btn').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                gsap.to("#overlay", { opacity: 0, duration: 0.8, onComplete: () => {
-                    stopParticles = true; isInGalleryMode = true; document.getElementById('overlay').style.display = 'none';
-                    gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
-                    currentIdx = 0; renderCurrentScene();
-                    document.getElementById('total-num').innerText = String(sceneConfig.length).padStart(2, '0');
-                }});
+            gsap.fromTo(".brand-title-text", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" });
+            gsap.fromTo(".sub-brand-text", { opacity: 0 }, { opacity: 0.6, duration: 1, delay: 0.5 });
+            
+            document.querySelectorAll('.entry-btn-el').forEach(btn => {
+                btn.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    gsap.to("#overlay", { opacity: 0, duration: 0.8, onStart: () => { stopParticles = true; }, onComplete: () => {
+                        isInGalleryMode = true; document.getElementById('overlay').style.display = 'none';
+                        gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
+                        currentIdx = 0; renderCurrentScene();
+                        const totalNumEl = document.getElementById('total-num');
+                        if (totalNumEl) totalNumEl.innerText = String(sceneConfig.length).padStart(2, '0');
+                    }});
+                });
             });
-            document.getElementById('back-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); exitExperience(); });
-            document.getElementById('monitor-toggle').addEventListener('pointerdown', (e) => { e.stopPropagation(); const m = document.getElementById('monitor-panel'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; updateMonitor(); });
+            const backBtnEl = document.getElementById('back-btn');
+            if (backBtnEl) backBtnEl.addEventListener('pointerdown', (e) => { e.stopPropagation(); exitExperience(); });
         };
 
         window.addEventListener('pointerdown', (e) => {
+            if (!isInGalleryMode && !isVoidMode && !isVoidTransitioning) {
+                particles.forEach(p => {
+                    if (p.type === 'clover4') {
+                        const dx = e.clientX - p.x;
+                        const dy = e.clientY - p.y;
+                        if (Math.sqrt(dx*dx + dy*dy) < p.size * 3) {
+                            triggerIrisVoid(e.clientX, e.clientY);
+                        }
+                    }
+                });
+            }
             if (!isInGalleryMode) return;
             if (e.target.closest('.interactive-ui')) return;
             handleNavigation(e.clientX);
