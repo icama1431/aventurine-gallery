@@ -30,7 +30,6 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            /* 關鍵：防止 Safari 預設手勢干擾 */
             touch-action: none;
         }
         
@@ -42,7 +41,6 @@
             z-index: 1;
         }
 
-        /* 膠卷雜訊：確保完全不阻擋點擊 */
         #noise-canvas {
             position: absolute;
             top: 0; left: 0;
@@ -60,9 +58,7 @@
             z-index: 5;
         }
 
-        /* UI 層：pointer-events: none 確保點擊可以穿透到 canvas */
         .ui-layer { pointer-events: none; user-select: none; z-index: 80; }
-        /* 互動按鈕：pointer-events: auto 恢復點擊 */
         .interactive-ui { pointer-events: auto; }
         
         #bg-slideshow {
@@ -128,12 +124,54 @@
             z-index: 15;
         }
 
+        /* 監控面板樣式 - 已移動至左側 */
+        #monitor-panel {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            width: 260px;
+            max-height: 400px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            z-index: 999;
+            color: white;
+            font-size: 10px;
+            overflow-y: auto;
+            display: none;
+            scrollbar-width: thin;
+        }
+        #monitor-panel::-webkit-scrollbar { width: 4px; }
+        #monitor-panel::-webkit-scrollbar-thumb { background: var(--gold); }
+
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="flex items-center justify-center">
 
     <canvas id="noise-canvas"></canvas>
+
+    <!-- 資源監控面板 (調試用) -->
+    <div id="monitor-panel" class="p-4 font-mono">
+        <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+            <span class="text-[#d4af37] font-bold uppercase tracking-widest">Resource Monitor</span>
+            <span id="load-count" class="text-white/50">0/0</span>
+        </div>
+        <div id="progress-bar-container" class="w-full h-1 bg-white/10 mb-4 overflow-hidden">
+            <div id="progress-bar-fill" class="h-full bg-[#d4af37] transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div id="monitor-list" class="space-y-1">
+            <!-- 狀態清單將由 JS 產生 -->
+        </div>
+    </div>
+
+    <!-- 監控開關按鈕 - 已移動至左下角 -->
+    <button id="monitor-toggle" class="fixed bottom-6 left-6 w-10 h-10 bg-black/50 border border-[#d4af37]/30 rounded-full z-[1000] flex items-center justify-center text-[#d4af37] opacity-20 hover:opacity-100 transition-opacity interactive-ui">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+    </button>
 
     <!-- 首頁 Overlay -->
     <div id="overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#030808] transition-all duration-1000">
@@ -160,7 +198,7 @@
 
             <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic text-center">Decrypting the deck...</div>
             
-            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase">
+            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[70]">
                 <span class="relative z-10">Take the chance</span>
             </button>
         </div>
@@ -251,6 +289,40 @@
             { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭。」' }
         ];
 
+        // --- 資源監控邏輯 ---
+        function updateMonitor() {
+            const list = document.getElementById('monitor-list');
+            const total = sceneConfig.length;
+            let loadedCount = 0;
+            
+            list.innerHTML = '';
+            sceneConfig.forEach((s, i) => {
+                const img = images[i];
+                let statusText = 'Pending';
+                let colorClass = 'text-white/20';
+
+                if (img && img.complete && img.naturalWidth !== 0) {
+                    statusText = 'READY';
+                    colorClass = 'text-green-500';
+                    loadedCount++;
+                } else if (img && img.src) {
+                    statusText = 'LOADING';
+                    colorClass = 'text-blue-400';
+                }
+
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center text-[9px]';
+                item.innerHTML = `
+                    <span class="text-white/40">HAND ${String(i+1).padStart(2,'0')}</span>
+                    <span class="${colorClass}">${statusText}</span>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('load-count').innerText = `${loadedCount}/${total}`;
+            document.getElementById('progress-bar-fill').style.width = `${(loadedCount/total)*100}%`;
+        }
+
         // --- 輕量化粒子與雜訊 ---
         let particles = [];
         class Particle {
@@ -279,7 +351,7 @@
         let lastNoiseTime = 0;
         function animateNoise() {
             const now = Date.now();
-            if (now - lastNoiseTime > 80) { // ~12fps 對 Safari 最友善
+            if (now - lastNoiseTime > 80) { 
                 if (nCanvas.width > 0 && nCanvas.height > 0) {
                     nCtx.clearRect(0,0,nCanvas.width, nCanvas.height);
                     for(let i=0; i<800; i++) {
@@ -330,10 +402,15 @@
             document.getElementById('loading-status').classList.add('hidden');
             document.getElementById('entry-btn').classList.remove('hidden');
 
-            // 後台載入剩餘圖片，不阻塞主線程
+            // 背景輪詢：檢查加載進度
+            setInterval(updateMonitor, 1000);
+
+            // 後台載入剩餘圖片
             sceneConfig.forEach((s, i) => {
                 const img = new Image(); img.crossOrigin = "anonymous";
-                img.src = s.url; images[i] = img;
+                img.onload = () => { if (isInGalleryMode) updateMonitor(); };
+                img.src = s.url; 
+                images[i] = img;
             });
         }
 
@@ -378,7 +455,6 @@
             const img = images[currentIdx];
             document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
             
-            // Safari 關鍵：切換前強制解碼
             try { if (img.decode) await img.decode(); } catch (e) {}
 
             drawScene(img, 1);
@@ -396,7 +472,10 @@
                 (currentIdx - 1 + sceneConfig.length) % sceneConfig.length : 
                 (currentIdx + 1) % sceneConfig.length;
 
-            if (!images[nextIdx] || !images[nextIdx].complete) return;
+            if (!images[nextIdx] || !images[nextIdx].complete) {
+                console.log(`Image ${nextIdx} not ready yet.`);
+                return;
+            }
 
             isTransitioning = true;
             currentIdx = nextIdx;
@@ -437,18 +516,25 @@
                         gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
                         currentIdx = 0; renderCurrentScene();
                         document.getElementById('total-num').innerText = String(sceneConfig.length).padStart(2, '0');
+                        updateMonitor();
                     }
                 });
             });
             document.getElementById('back-btn').addEventListener('click', (e) => {
                 e.stopPropagation(); exitExperience();
             });
+
+            // 監控開關
+            document.getElementById('monitor-toggle').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const m = document.getElementById('monitor-panel');
+                m.style.display = m.style.display === 'block' ? 'none' : 'block';
+                updateMonitor();
+            });
         };
 
-        // iPad Safari 點擊優化
         window.addEventListener('click', (e) => {
             if (!isInGalleryMode) return;
-            // 排除按鈕本身的點擊
             if (e.target.closest('.interactive-ui')) return;
             handleNavigation(e.clientX);
         }, { passive: false });
