@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <!-- FB / LINE 預覽設定 -->
-    <meta property="og:title" content="Cinematic Canvas | Aventurine">
-    <meta property="og:description" content="卡卡瓦夏 - 「幸運，從來不是偶然的施捨。」">
+    <meta property="og:title" content="| Aventurine">
+    <meta property="og:description" content="砂金 - 「願母神為你三度閉眼，保佑你的血脈永遠跳動。」">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
-    <title>Cinematic Canvas | It's All or Nothing</title>
+    <title>| It's All or Nothing</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -30,7 +30,6 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            /* Safari 點擊優化：強制讓 body 成為可交互區域 */
             cursor: pointer;
             touch-action: none;
         }
@@ -141,10 +140,7 @@
             font-size: 10px;
             overflow-y: auto;
             display: none;
-            scrollbar-width: thin;
         }
-        #monitor-panel::-webkit-scrollbar { width: 4px; }
-        #monitor-panel::-webkit-scrollbar-thumb { background: var(--gold); }
 
         ::-webkit-scrollbar { display: none; }
     </style>
@@ -156,7 +152,7 @@
     <!-- 資源監控面板 -->
     <div id="monitor-panel" class="p-4 font-mono">
         <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-            <span class="text-[#d4af37] font-bold uppercase tracking-widest">Resource Monitor</span>
+            <span class="text-[#d4af37] font-bold uppercase tracking-widest text-[11px]">Asset Inspector</span>
             <span id="load-count" class="text-white/50">0/0</span>
         </div>
         <div id="progress-bar-container" class="w-full h-1 bg-white/10 mb-4 overflow-hidden">
@@ -165,10 +161,10 @@
         <div id="monitor-list" class="space-y-1"></div>
     </div>
 
-    <!-- 監控開關按鈕 -->
+    <!-- 監控開關 -->
     <button id="monitor-toggle" class="fixed bottom-6 left-6 w-10 h-10 bg-black/50 border border-[#d4af37]/30 rounded-full z-[1000] flex items-center justify-center text-[#d4af37] opacity-20 hover:opacity-100 transition-opacity interactive-ui">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2-2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
     </button>
 
@@ -180,22 +176,22 @@
             <div id="slide-2" class="bg-slide"></div>
         </div>
 
-        <div class="relative z-10 flex flex-col items-center px-6">
+        <div class="relative z-10 flex flex-col items-center px-6 text-center">
             <div class="flex items-center gap-6 mb-6 opacity-40">
                 <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
-                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1.2em] uppercase font-bold text-center">The Strategic Gamble</p>
+                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1.2em] uppercase font-bold">The Strategic Gamble</p>
                 <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
             </div>
 
-            <div class="overflow-hidden px-4 mb-4 text-center">
+            <div class="overflow-hidden px-4 mb-4">
                 <h1 id="brand-title" class="text-white text-4xl md:text-6xl lg:text-7xl font-light opacity-0 translate-y-10 tracking-[0.25em] gold-glow uppercase">
                     IT'S <span class="font-serif italic font-bold">ALL</span> OR <span class="font-serif italic font-bold">NOTHING</span>
                 </h1>
             </div>
             
-            <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.5em] mb-16 opacity-0 uppercase font-light text-center">Luck is the only skill</p>
+            <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.5em] mb-16 opacity-0 uppercase font-light">Luck is the only skill</p>
 
-            <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic text-center">Decrypting the deck...</div>
+            <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic">Decrypting the cosmic deck...</div>
             
             <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[110]">
                 <span class="relative z-10">Take the chance</span>
@@ -223,8 +219,8 @@
         </div>
 
         <div class="fixed bottom-24 left-0 w-full flex justify-center px-10">
-            <div id="subtitle-container" class="max-w-4xl text-center">
-                <p id="subtitle-text" class="text-white/90 text-base md:text-xl font-light leading-relaxed opacity-0 tracking-[0.15em] italic" style="text-shadow: 0 5px 15px rgba(0,0,0,1)"></p>
+            <div id="subtitle-container" class="max-w-5xl text-center">
+                <p id="subtitle-text" class="text-white/90 text-base md:text-xl lg:text-2xl font-light leading-relaxed opacity-0 tracking-[0.12em] italic" style="text-shadow: 0 5px 20px rgba(0,0,0,1)"></p>
             </div>
         </div>
     </div>
@@ -252,45 +248,46 @@
         ];
         let currentBgIdx = 0;
 
+        // --- 劇情台詞配置 (砂金精選) ---
         const sceneConfig = [
-            { url: 'https://live.staticflickr.com/65535/55036738467_6e8273bf12_h.jpg', text: '「幸運，從來不是偶然的施捨。」' },
-            { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。」' },
-            { url: 'https://live.staticflickr.com/65535/55037642501_f0801b7f90_h.jpg', text: '「這張牌，賭上我的靈魂與未來。」' },
+            { url: 'https://live.staticflickr.com/65535/55036738467_6e8273bf12_h.jpg', text: '「幸運，不過是命運那卑微的影子。」' },
+            { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。這是我——埃維金人的法則。」' },
+            { url: 'https://live.staticflickr.com/65535/55037642501_f0801b7f90_h.jpg', text: '「賠率越高，回報越豐。我向來不介意把靈魂壓在底牌上。」' },
             { url: 'https://live.staticflickr.com/65535/55037821968_6bb08b5b77_h.jpg', text: '「命運從不憐憫弱者，它只眷顧敢於 All-in 的瘋子。」' },
-            { url: 'https://live.staticflickr.com/65535/55037986890_aac979b78f_h.jpg', text: '「當金色的雨落下時，遊戲才剛要開始。」' },
-            { url: 'https://live.staticflickr.com/65535/55037987335_be8b101116_h.jpg', text: '「勝負已分。而你，是我的戰利品。」' },
-            { url: 'https://live.staticflickr.com/65535/55036740552_22f10474b4_h.jpg', text: '「煙霧繚繞間，我彷彿看見了死神的微笑。」' },
-            { url: 'https://live.staticflickr.com/65535/55037897854_8e08759781_h.jpg', text: '「這張王牌，是為了與你重逢而留的。」' },
-            { url: 'https://live.staticflickr.com/65535/55037644446_d96c896ab6_h.jpg', text: '「願母神賜予我，最後的幸運。」' },
-            { url: 'https://live.staticflickr.com/65535/55037988640_4f2af36145_h.jpg', text: '「籌碼已經落下。」' },
-            { url: 'https://live.staticflickr.com/65535/55037824943_1893edb665_h.jpg', text: '「遊戲還沒結束。」' },
-            { url: 'https://live.staticflickr.com/65535/55037653306_1a25c0a320_h.jpg', text: '「看穿一切的雙眼。」' },
-            { url: 'https://live.staticflickr.com/65535/55037989645_d9a22961c8_c.jpg', text: '「這就是我的底牌。」' },
-            { url: 'https://live.staticflickr.com/65535/55037645801_608474bb7f_c.jpg', text: '「籌碼在指尖旋轉。」' },
-            { url: 'https://live.staticflickr.com/65535/55037990140_b36155f3a5_h.jpg', text: '「命運的豪賭。」' },
-            { url: 'https://live.staticflickr.com/65535/55036743047_db2a13730c_h.jpg', text: '「不可逾越的界限。」' },
-            { url: 'https://live.staticflickr.com/65535/55036743237_af01d41fda_h.jpg', text: '「最後的一眼。」' },
-            { url: 'https://live.staticflickr.com/65535/55037901284_b344569e07_h.jpg', text: '「金色的誘惑。」' },
-            { url: 'https://live.staticflickr.com/65535/55036743462_956d4080a9_h.jpg', text: '「洗牌，重新開始。」' },
-            { url: 'https://live.staticflickr.com/65535/55037902329_6d58f7c54d_c.jpg', text: '「你準備好輸了嗎？」' },
-            { url: 'https://live.staticflickr.com/65535/55037648256_9a2a042d92_h.jpg', text: '「深邃的目光。」' },
-            { url: 'https://live.staticflickr.com/65535/55037648386_ba9f62d887_h.jpg', text: '「無關運氣。」' },
-            { url: 'https://live.staticflickr.com/65535/55037648666_ee22deafe3_h.jpg', text: '「一切都在掌握之中。」' },
-            { url: 'https://live.staticflickr.com/65535/55036745327_83799b354b_h.jpg', text: '「優雅的謝幕。」' },
-            { url: 'https://live.staticflickr.com/65535/55037649091_58418357eb_h.jpg', text: '「賭徒的尊嚴。」' },
-            { url: 'https://live.staticflickr.com/65535/55037828893_fc460d8d1d_h.jpg', text: '「最後的黃金時刻。」' },
-            { url: 'https://live.staticflickr.com/65535/55036746207_be7e4b2aae_c.jpg', text: '「籌碼已至，生死有命。」' },
-            { url: 'https://live.staticflickr.com/65535/55037829178_a7a92613a0_h.jpg', text: '「最後的豪賭。」' },
-            { url: 'https://live.staticflickr.com/65535/55036746507_f9d6f1c8c5_h.jpg', text: '「願母神保佑。」' },
-            { url: 'https://live.staticflickr.com/65535/55037650041_664169bdd3_h.jpg', text: '「再會，贏家。」' },
-            { url: 'https://live.staticflickr.com/65535/55037650146_8fc44cdbe4_h.jpg', text: '「遊戲結束。」' },
-            { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭。」' }
+            { url: 'https://live.staticflickr.com/65535/55037986890_aac979b78f_h.jpg', text: '「當金色的雨落下時，真正的表演才剛要開始。」' },
+            { url: 'https://live.staticflickr.com/65535/55037987335_be8b101116_h.jpg', text: '「勝負已分。而你，現在是我的戰利品了。」' },
+            { url: 'https://live.staticflickr.com/65535/55036740552_22f10474b4_h.jpg', text: '「我這一生，都在與死神對賭。而我，還沒輸過。」' },
+            { url: 'https://live.staticflickr.com/65535/55037897854_8e08759781_h.jpg', text: '「這張王牌，是為了與你重逢而特意留存的。」' },
+            { url: 'https://live.staticflickr.com/65535/55037644446_d96c896ab6_h.jpg', text: '「願母神為你三度閉眼，保佑你的旅途永遠平坦。」' },
+            { url: 'https://live.staticflickr.com/65535/55037988640_4f2af36145_h.jpg', text: '「籌碼落地的聲音，總是比任何樂章都悅耳。」' },
+            { url: 'https://live.staticflickr.com/65535/55037824943_1893edb665_h.jpg', text: '「遊戲還沒結束。在底牌揭曉前，誰都別想離開桌子。」' },
+            { url: 'https://live.staticflickr.com/65535/55037653306_1a25c0a320_h.jpg', text: '「看穿一切的雙眼，有時也會被金色的迷霧遮蔽。」' },
+            { url: 'https://live.staticflickr.com/65535/55037989645_d9a22961c8_c.jpg', text: '「這就是我的底牌。這就是……我的一切。」' },
+            { url: 'https://live.staticflickr.com/65535/55037645801_608474bb7f_c.jpg', text: '「博弈的迷人之處，在於明知會輸，卻依然選擇下注。」' },
+            { url: 'https://live.staticflickr.com/65535/55037990140_b36155f3a5_h.jpg', text: '「公司戰略投資部……我只是在執行一場雙贏的投資。」' },
+            { url: 'https://live.staticflickr.com/65535/55036743047_db2a13730c_h.jpg', text: '「卡卡瓦夏，別回頭。去那片陽光燦爛的地方。」' },
+            { url: 'https://live.staticflickr.com/65535/55036743237_af01d41fda_h.jpg', text: '「在夢中死去，才是真正意義上的覺醒。」' },
+            { url: 'https://live.staticflickr.com/65535/55037901284_b344569e07_h.jpg', text: '「黃金的重量，足以壓垮那些意志不堅的靈魂。」' },
+            { url: 'https://live.staticflickr.com/65535/55036743462_956d4080a9_h.jpg', text: '「洗牌，發牌。命運的輪迴從不曾停歇。」' },
+            { url: 'https://live.staticflickr.com/65535/55037902329_6d58f7c54d_c.jpg', text: '「你準備好，輸掉你所擁有的一切了嗎？」' },
+            { url: 'https://live.staticflickr.com/65535/55037648256_9a2a042d92_h.jpg', text: '「這雙眼睛，記錄了荒漠的風暴與霓虹的虛假。」' },
+            { url: 'https://live.staticflickr.com/65535/55037648386_ba9f62d887_h.jpg', text: '「無關運氣，這只是純粹的數字計算……與一點點瘋狂。」' },
+            { url: 'https://live.staticflickr.com/65535/55037648666_ee22deafe3_h.jpg', text: '「一切都在掌握之中。即便那是一場必敗的局。」' },
+            { url: 'https://live.staticflickr.com/65535/55036745327_83799b354b_h.jpg', text: '「優雅的謝幕，是賭徒對對手最後的尊重。」' },
+            { url: 'https://live.staticflickr.com/65535/55037649091_58418357eb_h.jpg', text: '「賭徒的尊嚴，就在於他永遠有勇氣再次推開那道門。」' },
+            { url: 'https://live.staticflickr.com/65535/55037828893_fc460d8d1d_h.jpg', text: '「最後的黃金時刻。這場博弈，由我來劃下句點。」' },
+            { url: 'https://live.staticflickr.com/65535/55036746207_be7e4b2aae_c.jpg', text: '「籌碼已至，生死有命。這就是我的生存之道。」' },
+            { url: 'https://live.staticflickr.com/65535/55037829178_a7a92613a0_h.jpg', text: '「最後一場豪賭。目標——匹諾康尼的真實。」' },
+            { url: 'https://live.staticflickr.com/65535/55036746507_f9d6f1c8c5_h.jpg', text: '「願母神為我三度閉眼……請看著我，卡卡瓦夏。」' },
+            { url: 'https://live.staticflickr.com/65535/55037650041_664169bdd3_h.jpg', text: '「再會了，這場盛大而虛幻的夢境。」' },
+            { url: 'https://live.staticflickr.com/65535/55037650146_8fc44cdbe4_h.jpg', text: '「遊戲結束。願我們在陽光下重逢。」' },
+            { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭，原來是如此安靜的地方。」' }
         ];
 
+        // --- 資源監控邏輯 ---
         function updateMonitor() {
             const list = document.getElementById('monitor-list');
             if (!list) return;
-            const total = sceneConfig.length;
             let loadedCount = 0;
             list.innerHTML = '';
             sceneConfig.forEach((s, i) => {
@@ -302,14 +299,15 @@
                     statusText = 'LOADING'; colorClass = 'text-blue-400';
                 }
                 const item = document.createElement('div');
-                item.className = 'flex justify-between items-center text-[9px]';
-                item.innerHTML = `<span class="text-white/40">HAND ${String(i+1).padStart(2,'0')}</span><span class="${colorClass}">${statusText}</span>`;
+                item.className = 'flex justify-between items-center text-[9px] py-0.5';
+                item.innerHTML = `<span class="text-white/40">Hand ${String(i+1).padStart(2,'0')}</span><span class="${colorClass}">${statusText}</span>`;
                 list.appendChild(item);
             });
-            document.getElementById('load-count').innerText = `${loadedCount}/${total}`;
-            document.getElementById('progress-bar-fill').style.width = `${(loadedCount/total)*100}%`;
+            document.getElementById('load-count').innerText = `${loadedCount}/${sceneConfig.length}`;
+            document.getElementById('progress-bar-fill').style.width = `${(loadedCount/sceneConfig.length)*100}%`;
         }
 
+        // --- 輕量化粒子與雜訊 ---
         let particles = [];
         class Particle {
             constructor() { this.reset(); }
@@ -383,6 +381,7 @@
             setInterval(updateMonitor, 1500);
             sceneConfig.forEach((s, i) => {
                 const img = new Image(); img.crossOrigin = "anonymous";
+                img.onload = () => { if (isInGalleryMode) updateMonitor(); };
                 img.src = s.url; images[i] = img;
             });
         }
@@ -424,7 +423,7 @@
             document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
             try { if (img.decode) await img.decode(); } catch (e) {}
             drawScene(img, 1);
-            gsap.fromTo("#subtitle-text", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", onStart: () => { document.getElementById('subtitle-text').innerText = sceneConfig[currentIdx].text; } });
+            gsap.fromTo("#subtitle-text", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 1.2, ease: "power2.out", onStart: () => { document.getElementById('subtitle-text').innerText = sceneConfig[currentIdx].text; } });
         }
 
         function handleNavigation(clientX) {
@@ -466,7 +465,6 @@
             document.getElementById('monitor-toggle').addEventListener('pointerdown', (e) => { e.stopPropagation(); const m = document.getElementById('monitor-panel'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; updateMonitor(); });
         };
 
-        // 使用 pointerdown 解決 Safari 點擊偵測延遲
         window.addEventListener('pointerdown', (e) => {
             if (!isInGalleryMode) return;
             if (e.target.closest('.interactive-ui')) return;
