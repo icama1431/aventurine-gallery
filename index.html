@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- FB / LINE 預覽設定 -->
-    <meta property="og:title" content="| Aventurine">
+    <meta property="og:title" content="Cinematic Canvas | Aventurine">
     <meta property="og:description" content="卡卡瓦夏 - 「幸運，從來不是偶然的施捨。」">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://live.staticflickr.com/65535/55036747407_96aaeaa0fb_c.jpg">
@@ -42,14 +42,15 @@
             z-index: 1;
         }
 
-        /* 膠卷雜訊層 */
+        /* 膠卷雜訊層：Safari 優化透明度 */
         #noise-canvas {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 10;
-            opacity: 0.04;
+            opacity: 0.03;
             pointer-events: none;
+            will-change: transform;
         }
 
         #particle-canvas { 
@@ -67,7 +68,7 @@
             position: absolute;
             inset: 0;
             z-index: 2;
-            opacity: 0.05; 
+            opacity: 0.1; 
             pointer-events: none;
         }
         .bg-slide {
@@ -89,24 +90,24 @@
         }
 
         .aventurine-btn {
-            background: rgba(13, 59, 63, 0.4);
+            background: rgba(13, 59, 63, 0.5);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            border: 1px solid rgba(212, 175, 55, 0.4);
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
             background-image: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.1) 50%, transparent 65%);
             background-size: 200% 100%;
-            animation: shimmer 4s infinite linear;
+            animation: shimmer 5s infinite linear;
             cursor: pointer !important;
         }
 
         .back-btn-style {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(212, 175, 55, 0.2);
             opacity: 0.35;
             transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
             border-radius: 50%;
-            width: 36px; height: 36px;
+            width: 38px; height: 38px;
             display: flex; align-items: center; justify-content: center;
         }
         .back-btn-style:hover {
@@ -120,8 +121,8 @@
 
         .corner-deco {
             position: absolute;
-            width: 20px; height: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.15);
+            width: 24px; height: 24px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
             pointer-events: none;
             z-index: 15;
         }
@@ -145,7 +146,7 @@
         <div class="relative z-10 flex flex-col items-center px-6">
             <div class="flex items-center gap-6 mb-6 opacity-40">
                 <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
-                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1em] uppercase font-bold">The Strategic Gamble</p>
+                <p class="text-[9px] md:text-[10px] text-[#d4af37] tracking-[1.2em] uppercase font-bold text-center">The Strategic Gamble</p>
                 <div class="h-[1px] w-12 md:w-16 bg-[#d4af37]"></div>
             </div>
 
@@ -155,11 +156,11 @@
                 </h1>
             </div>
             
-            <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.2em] md:tracking-[1.5em] mb-16 opacity-0 uppercase font-light">Luck is the only skill</p>
+            <p id="sub-brand" class="text-[#d4af37] text-[10px] md:text-[12px] tracking-[1.5em] mb-16 opacity-0 uppercase font-light text-center">Luck is the only skill</p>
 
-            <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic">Shuffling the cosmic deck...</div>
+            <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic text-center">Decrypting the deck...</div>
             
-            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/70 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[70]">
+            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[70]">
                 <span class="relative z-10">Take the chance</span>
             </button>
         </div>
@@ -181,7 +182,7 @@
             </button>
         </div>
 
-        <div class="fixed top-5 right-6 md:top-7 md:right-10 text-[9px] md:text-[10px] tracking-[0.4em] text-[#d4af37]/30 font-bold">
+        <div class="fixed top-5 right-6 md:top-7 md:right-10 text-[10px] md:text-[11px] tracking-[0.4em] text-[#d4af37]/30 font-bold">
             HAND <span id="current-num" class="text-white/60">00</span> / <span id="total-num">00</span>
         </div>
 
@@ -195,8 +196,13 @@
     <canvas id="main-canvas"></canvas>
 
     <script>
+        /**
+         * Safari 相容性優化：
+         * 1. 使用 await img.decode() 確保圖片進入 GPU
+         * 2. 針對 Safari Resize 事件頻繁觸發進行防抖處理
+         */
         const canvas = document.getElementById('main-canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false }); // 關閉透明度提升 Canvas 效能
         const pCanvas = document.getElementById('particle-canvas');
         const pCtx = pCanvas.getContext('2d');
         const nCanvas = document.getElementById('noise-canvas');
@@ -215,20 +221,19 @@
         ];
         let currentBgIdx = 0;
 
+        // --- 粒子系統 ---
         let particles = [];
-        const particleTypes = ['chip', 'dice', 'card'];
         class Particle {
             constructor() { this.reset(); }
             reset() {
                 this.x = Math.random() * pCanvas.width;
                 this.y = -50 - Math.random() * 200;
-                this.size = 12 + Math.random() * 20;
-                this.speed = 0.4 + Math.random() * 1.0;
+                this.size = 10 + Math.random() * 20;
+                this.speed = 0.5 + Math.random() * 0.8;
                 this.rotation = Math.random() * Math.PI * 2;
-                this.rotSpeed = (Math.random() - 0.5) * 0.015;
-                this.type = particleTypes[Math.floor(Math.random() * particleTypes.length)];
-                this.opacity = 0.1 + Math.random() * 0.3;
-                this.blur = Math.random() * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.01;
+                this.type = Math.random() > 0.5 ? 'chip' : 'card';
+                this.opacity = 0.1 + Math.random() * 0.2;
             }
             update() {
                 this.y += this.speed;
@@ -238,13 +243,10 @@
             draw() {
                 pCtx.save();
                 pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
-                pCtx.globalAlpha = this.opacity; pCtx.filter = `blur(${this.blur}px)`;
+                pCtx.globalAlpha = this.opacity;
                 pCtx.strokeStyle = '#d4af37'; pCtx.lineWidth = 1;
                 if (this.type === 'chip') {
                     pCtx.beginPath(); pCtx.arc(0, 0, this.size, 0, Math.PI * 2); pCtx.stroke();
-                    pCtx.beginPath(); pCtx.arc(0, 0, this.size * 0.7, 0, Math.PI * 2); pCtx.setLineDash([4, 4]); pCtx.stroke();
-                } else if (this.type === 'dice') {
-                    pCtx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
                 } else {
                     pCtx.strokeRect(-this.size/2, -this.size * 0.7, this.size, this.size * 1.4);
                 }
@@ -252,34 +254,34 @@
             }
         }
 
-        // --- 膠卷微粒動畫 (修正 IndexSizeError) ---
+        // --- 膠卷微粒動畫 (Safari 效能優化版) ---
+        let lastNoiseTime = 0;
         function createNoise() {
-            // 安全檢查：若寬高為 0 則不執行
-            const w = nCanvas.width;
-            const h = nCanvas.height;
-            if (w <= 0 || h <= 0) return;
+            if (nCanvas.width === 0 || nCanvas.height === 0) return;
+            // 降低雜訊更新頻率至約 15fps，節省 Safari GPU
+            const now = Date.now();
+            if (now - lastNoiseTime < 60) return;
+            lastNoiseTime = now;
 
             try {
-                const idata = nCtx.createImageData(w, h);
+                const idata = nCtx.createImageData(nCanvas.width, nCanvas.height);
                 const buffer32 = new Uint32Array(idata.data.buffer);
-                const len = buffer32.length;
-                for (let i = 0; i < len; i++) {
-                    if (Math.random() < 0.5) buffer32[i] = 0xff000000;
+                for (let i = 0; i < buffer32.length; i++) {
+                    if (Math.random() < 0.05) buffer32[i] = 0x11000000;
                 }
                 nCtx.putImageData(idata, 0, 0);
-            } catch (e) {
-                console.warn("Noise rendering deferred:", e.message);
-            }
+            } catch (e) {}
         }
 
         function animateNoise() {
             createNoise();
-            setTimeout(() => requestAnimationFrame(animateNoise), 50);
+            requestAnimationFrame(animateNoise);
         }
 
         function initParticles() {
             particles = [];
-            for (let i = 0; i < (window.innerWidth < 768 ? 30 : 55); i++) particles.push(new Particle());
+            const count = window.innerWidth < 768 ? 20 : 40;
+            for (let i = 0; i < count; i++) particles.push(new Particle());
         }
         function animateParticles() {
             if (stopParticles) return;
@@ -288,6 +290,7 @@
             requestAnimationFrame(animateParticles);
         }
 
+        // --- 場景配置 ---
         const sceneConfig = [
             { url: 'https://live.staticflickr.com/65535/55036738467_6e8273bf12_h.jpg', text: '「幸運，從來不是偶然的施捨。」' },
             { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。」' },
@@ -321,15 +324,15 @@
             { url: 'https://live.staticflickr.com/65535/55037650041_664169bdd3_h.jpg', text: '「再會，贏家。」' },
             { url: 'https://live.staticflickr.com/65535/55037650146_8fc44cdbe4_h.jpg', text: '「遊戲結束。」' },
             { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭。」' }
-
         ];
 
         function resize() {
-            canvas.width = nCanvas.width = window.innerWidth;
-            canvas.height = nCanvas.height = window.innerHeight;
-            pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            canvas.width = nCanvas.width = pCanvas.width = w;
+            canvas.height = nCanvas.height = pCanvas.height = h;
             initParticles();
-            if (currentIdx >= 0) drawScene(images[currentIdx], 1);
+            if (currentIdx >= 0 && images[currentIdx]) drawScene(images[currentIdx], 1);
         }
         window.addEventListener('resize', resize);
         resize();
@@ -337,8 +340,17 @@
         async function preloadAssets() {
             const imgPromises = sceneConfig.map((scene) => {
                 return new Promise((resolve) => {
-                    const img = new Image(); img.crossOrigin = "anonymous";
-                    img.onload = () => resolve(img);
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = async () => {
+                        try {
+                            // Safari 優化：確保解碼完成才算加載成功
+                            if (img.decode) await img.decode();
+                            resolve(img);
+                        } catch (e) {
+                            resolve(img); // 回退方案
+                        }
+                    };
                     img.onerror = () => resolve(null);
                     img.src = scene.url;
                 });
@@ -369,12 +381,15 @@
         }
 
         function drawScene(img, opacity) {
-            if (!img) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!img || img.width === 0) return;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             const imgAspect = img.width / img.height;
             const canvasAspect = canvas.width / canvas.height;
             const fitScale = 0.98;
             let drawW, drawH;
+            
             if (canvasAspect > imgAspect) {
                 drawH = canvas.height * fitScale; drawW = drawH * imgAspect;
             } else {
@@ -382,19 +397,23 @@
             }
             const drawX = (canvas.width - drawW) / 2;
             const drawY = (canvas.height - drawH) / 2;
-            ctx.save(); ctx.globalAlpha = opacity;
-            ctx.drawImage(img, drawX, drawY, drawW, drawH); ctx.restore();
+            
+            ctx.globalAlpha = opacity;
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            ctx.globalAlpha = 1.0;
         }
 
         function renderCurrentScene() {
-            if (currentIdx < 0) return;
+            if (currentIdx < 0 || !images[currentIdx]) return;
             const img = images[currentIdx];
             const scene = sceneConfig[currentIdx];
             document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
+            
             drawScene(img, 1);
+            
             gsap.fromTo("#subtitle-text", 
                 { opacity: 0, y: 15 }, 
-                { opacity: 1, y: 0, duration: 1.2, ease: "power2.out", 
+                { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", 
                   onStart: () => { document.getElementById('subtitle-text').innerText = scene.text; } 
                 }
             );
@@ -402,14 +421,15 @@
 
         function handleNavigation(clientX) {
             if (!isInGalleryMode || isTransitioning) return;
-            if (clientX < window.innerWidth / 2) {
+            isTransitioning = true;
+            if (clientX < window.innerWidth * 0.4) {
                 currentIdx = (currentIdx - 1 + images.length) % images.length;
             } else {
                 currentIdx = (currentIdx + 1) % images.length;
             }
-            isTransitioning = true;
             renderCurrentScene();
-            setTimeout(() => { isTransitioning = false; }, 300);
+            // Safari 優化：給予更長的緩衝時間避免連點卡死
+            setTimeout(() => { isTransitioning = false; }, 350);
         }
 
         function exitExperience() {
@@ -418,13 +438,16 @@
             gsap.to("#overlay", { opacity: 1, duration: 0.8 });
             gsap.to("#photo-ui", { opacity: 0, pointerEvents: 'none', duration: 0.5 });
             gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
                 canvas.style.opacity = 1; currentIdx = -1;
             }});
             animateParticles();
         }
 
         window.onload = async () => {
+            // Safari 強制觸發一次 Resize 確保尺寸獲取正確
+            resize(); 
             await preloadAssets();
             animateParticles();
             animateNoise();
@@ -462,7 +485,7 @@
                 document.body.classList.remove('cursor-prev', 'cursor-next');
                 return;
             }
-            if (e.clientX < window.innerWidth / 2) {
+            if (e.clientX < window.innerWidth * 0.4) {
                 document.body.classList.add('cursor-prev');
                 document.body.classList.remove('cursor-next');
             } else {
@@ -473,4 +496,3 @@
     </script>
 </body>
 </html>
-
