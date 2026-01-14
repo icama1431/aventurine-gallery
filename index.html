@@ -30,6 +30,8 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+            /* Safari 點擊優化：強制讓 body 成為可交互區域 */
+            cursor: pointer;
             touch-action: none;
         }
         
@@ -124,7 +126,6 @@
             z-index: 15;
         }
 
-        /* 監控面板樣式 - 已移動至左側 */
         #monitor-panel {
             position: fixed;
             bottom: 80px;
@@ -152,7 +153,7 @@
 
     <canvas id="noise-canvas"></canvas>
 
-    <!-- 資源監控面板 (調試用) -->
+    <!-- 資源監控面板 -->
     <div id="monitor-panel" class="p-4 font-mono">
         <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
             <span class="text-[#d4af37] font-bold uppercase tracking-widest">Resource Monitor</span>
@@ -161,15 +162,13 @@
         <div id="progress-bar-container" class="w-full h-1 bg-white/10 mb-4 overflow-hidden">
             <div id="progress-bar-fill" class="h-full bg-[#d4af37] transition-all duration-300" style="width: 0%"></div>
         </div>
-        <div id="monitor-list" class="space-y-1">
-            <!-- 狀態清單將由 JS 產生 -->
-        </div>
+        <div id="monitor-list" class="space-y-1"></div>
     </div>
 
-    <!-- 監控開關按鈕 - 已移動至左下角 -->
+    <!-- 監控開關按鈕 -->
     <button id="monitor-toggle" class="fixed bottom-6 left-6 w-10 h-10 bg-black/50 border border-[#d4af37]/30 rounded-full z-[1000] flex items-center justify-center text-[#d4af37] opacity-20 hover:opacity-100 transition-opacity interactive-ui">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2-2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
     </button>
 
@@ -198,7 +197,7 @@
 
             <div id="loading-status" class="text-[#d4af37]/30 text-[9px] tracking-[0.6em] mb-12 uppercase italic text-center">Decrypting the deck...</div>
             
-            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[70]">
+            <button id="entry-btn" class="hidden interactive-ui aventurine-btn group relative px-12 md:px-20 py-4 md:py-5 text-white/80 hover:text-white transition-all duration-1000 tracking-[0.8em] text-[10px] md:text-[11px] overflow-hidden uppercase z-[110]">
                 <span class="relative z-10">Take the chance</span>
             </button>
         </div>
@@ -206,7 +205,6 @@
 
     <!-- 影集 UI 層 -->
     <div id="photo-ui" class="ui-layer fixed inset-0 opacity-0 pointer-events-none transition-opacity duration-1000">
-        
         <div class="corner-deco top-8 left-8 border-r-0 border-b-0"></div>
         <div class="corner-deco top-8 right-8 border-l-0 border-b-0"></div>
         <div class="corner-deco bottom-8 left-8 border-r-0 border-t-0"></div>
@@ -289,41 +287,29 @@
             { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭。」' }
         ];
 
-        // --- 資源監控邏輯 ---
         function updateMonitor() {
             const list = document.getElementById('monitor-list');
+            if (!list) return;
             const total = sceneConfig.length;
             let loadedCount = 0;
-            
             list.innerHTML = '';
             sceneConfig.forEach((s, i) => {
                 const img = images[i];
-                let statusText = 'Pending';
-                let colorClass = 'text-white/20';
-
+                let statusText = 'Pending', colorClass = 'text-white/20';
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    statusText = 'READY';
-                    colorClass = 'text-green-500';
-                    loadedCount++;
+                    statusText = 'READY'; colorClass = 'text-green-500'; loadedCount++;
                 } else if (img && img.src) {
-                    statusText = 'LOADING';
-                    colorClass = 'text-blue-400';
+                    statusText = 'LOADING'; colorClass = 'text-blue-400';
                 }
-
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center text-[9px]';
-                item.innerHTML = `
-                    <span class="text-white/40">HAND ${String(i+1).padStart(2,'0')}</span>
-                    <span class="${colorClass}">${statusText}</span>
-                `;
+                item.innerHTML = `<span class="text-white/40">HAND ${String(i+1).padStart(2,'0')}</span><span class="${colorClass}">${statusText}</span>`;
                 list.appendChild(item);
             });
-
             document.getElementById('load-count').innerText = `${loadedCount}/${total}`;
             document.getElementById('progress-bar-fill').style.width = `${(loadedCount/total)*100}%`;
         }
 
-        // --- 輕量化粒子與雜訊 ---
         let particles = [];
         class Particle {
             constructor() { this.reset(); }
@@ -335,13 +321,9 @@
                 this.rotation = Math.random() * Math.PI * 2;
                 this.opacity = 0.1 + Math.random() * 0.15;
             }
-            update() {
-                this.y += this.speed;
-                if (this.y > pCanvas.height + 50) this.reset();
-            }
+            update() { this.y += this.speed; if (this.y > pCanvas.height + 50) this.reset(); }
             draw() {
-                pCtx.save();
-                pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
+                pCtx.save(); pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
                 pCtx.globalAlpha = this.opacity; pCtx.strokeStyle = '#d4af37';
                 pCtx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
                 pCtx.restore();
@@ -376,8 +358,7 @@
         }
 
         function resize() {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
+            const w = window.innerWidth, h = window.innerHeight;
             canvas.width = nCanvas.width = pCanvas.width = w;
             canvas.height = nCanvas.height = pCanvas.height = h;
             initParticles();
@@ -385,7 +366,6 @@
         }
         window.addEventListener('resize', resize);
 
-        // --- 階梯式預載 (Safari 穩定版) ---
         async function preloadEssential() {
             const bgPromises = bgImagesUrls.map(url => {
                 return new Promise(res => {
@@ -397,20 +377,13 @@
             const firstImgPromise = new Promise(res => {
                 firstImg.onload = () => res(firstImg); firstImg.src = sceneConfig[0].url;
             });
-
             await Promise.all([...bgPromises, firstImgPromise]);
             document.getElementById('loading-status').classList.add('hidden');
             document.getElementById('entry-btn').classList.remove('hidden');
-
-            // 背景輪詢：檢查加載進度
-            setInterval(updateMonitor, 1000);
-
-            // 後台載入剩餘圖片
+            setInterval(updateMonitor, 1500);
             sceneConfig.forEach((s, i) => {
                 const img = new Image(); img.crossOrigin = "anonymous";
-                img.onload = () => { if (isInGalleryMode) updateMonitor(); };
-                img.src = s.url; 
-                images[i] = img;
+                img.src = s.url; images[i] = img;
             });
         }
 
@@ -432,10 +405,8 @@
 
         function drawScene(img, opacity) {
             if (!img || !img.complete || img.naturalWidth === 0) return;
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const imgAspect = img.naturalWidth / img.naturalHeight;
-            const canvasAspect = canvas.width / canvas.height;
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const imgAspect = img.naturalWidth / img.naturalHeight, canvasAspect = canvas.width / canvas.height;
             const fitScale = 0.98;
             let drawW, drawH;
             if (canvasAspect > imgAspect) {
@@ -443,44 +414,28 @@
             } else {
                 drawW = canvas.width * fitScale; drawH = drawW / imgAspect;
             }
-            const drawX = (canvas.width - drawW) / 2;
-            const drawY = (canvas.height - drawH) / 2;
-            ctx.globalAlpha = opacity;
-            ctx.drawImage(img, drawX, drawY, drawW, drawH);
-            ctx.globalAlpha = 1.0;
+            const drawX = (canvas.width - drawW) / 2, drawY = (canvas.height - drawH) / 2;
+            ctx.globalAlpha = opacity; ctx.drawImage(img, drawX, drawY, drawW, drawH); ctx.globalAlpha = 1.0;
         }
 
         async function renderCurrentScene() {
             if (currentIdx < 0 || !images[currentIdx]) return;
             const img = images[currentIdx];
             document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
-            
             try { if (img.decode) await img.decode(); } catch (e) {}
-
             drawScene(img, 1);
-            gsap.fromTo("#subtitle-text", 
-                { opacity: 0, y: 12 }, 
-                { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", 
-                  onStart: () => { document.getElementById('subtitle-text').innerText = sceneConfig[currentIdx].text; } 
-                }
-            );
+            gsap.fromTo("#subtitle-text", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", onStart: () => { document.getElementById('subtitle-text').innerText = sceneConfig[currentIdx].text; } });
         }
 
         function handleNavigation(clientX) {
             if (!isInGalleryMode || isTransitioning) return;
-            let nextIdx = (clientX < window.innerWidth * 0.4) ? 
-                (currentIdx - 1 + sceneConfig.length) % sceneConfig.length : 
-                (currentIdx + 1) % sceneConfig.length;
-
-            if (!images[nextIdx] || !images[nextIdx].complete) {
-                console.log(`Image ${nextIdx} not ready yet.`);
-                return;
-            }
-
+            let nextIdx = (clientX < window.innerWidth * 0.4) ? (currentIdx - 1 + sceneConfig.length) % sceneConfig.length : (currentIdx + 1) % sceneConfig.length;
+            if (!images[nextIdx] || !images[nextIdx].complete) return;
             isTransitioning = true;
             currentIdx = nextIdx;
-            renderCurrentScene();
-            setTimeout(() => { isTransitioning = false; }, 450);
+            renderCurrentScene().finally(() => {
+                setTimeout(() => { isTransitioning = false; }, 450);
+            });
         }
 
         function exitExperience() {
@@ -488,64 +443,39 @@
             document.getElementById('overlay').style.display = 'flex';
             gsap.to("#overlay", { opacity: 1, duration: 0.8 });
             gsap.to("#photo-ui", { opacity: 0, duration: 0.5 });
-            gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => {
-                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                canvas.style.opacity = 1; currentIdx = -1;
-            }});
+            gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height); canvas.style.opacity = 1; currentIdx = -1; }});
             animateParticles();
         }
 
         window.onload = async () => {
-            resize(); 
-            animateNoise();
-            animateParticles();
-            startBgSlideshow();
+            resize(); animateNoise(); animateParticles(); startBgSlideshow();
             await preloadEssential();
-            
             gsap.to("#brand-title", { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" });
             gsap.to("#sub-brand", { opacity: 0.6, duration: 1, delay: 0.5 });
 
-            document.getElementById('entry-btn').addEventListener('click', (e) => {
+            document.getElementById('entry-btn').addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
-                gsap.to("#overlay", { 
-                    opacity: 0, duration: 0.8,
-                    onComplete: () => {
-                        stopParticles = true;
-                        isInGalleryMode = true;
-                        document.getElementById('overlay').style.display = 'none';
-                        gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
-                        currentIdx = 0; renderCurrentScene();
-                        document.getElementById('total-num').innerText = String(sceneConfig.length).padStart(2, '0');
-                        updateMonitor();
-                    }
-                });
+                gsap.to("#overlay", { opacity: 0, duration: 0.8, onComplete: () => {
+                    stopParticles = true; isInGalleryMode = true; document.getElementById('overlay').style.display = 'none';
+                    gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
+                    currentIdx = 0; renderCurrentScene();
+                    document.getElementById('total-num').innerText = String(sceneConfig.length).padStart(2, '0');
+                }});
             });
-            document.getElementById('back-btn').addEventListener('click', (e) => {
-                e.stopPropagation(); exitExperience();
-            });
-
-            // 監控開關
-            document.getElementById('monitor-toggle').addEventListener('click', (e) => {
-                e.stopPropagation();
-                const m = document.getElementById('monitor-panel');
-                m.style.display = m.style.display === 'block' ? 'none' : 'block';
-                updateMonitor();
-            });
+            document.getElementById('back-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); exitExperience(); });
+            document.getElementById('monitor-toggle').addEventListener('pointerdown', (e) => { e.stopPropagation(); const m = document.getElementById('monitor-panel'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; updateMonitor(); });
         };
 
-        window.addEventListener('click', (e) => {
+        // 使用 pointerdown 解決 Safari 點擊偵測延遲
+        window.addEventListener('pointerdown', (e) => {
             if (!isInGalleryMode) return;
             if (e.target.closest('.interactive-ui')) return;
             handleNavigation(e.clientX);
-        }, { passive: false });
+        });
 
         window.addEventListener('mousemove', (e) => {
             if (!isInGalleryMode) return;
-            if (e.clientX < window.innerWidth * 0.4) {
-                document.body.className = 'cursor-prev';
-            } else {
-                document.body.className = 'cursor-next';
-            }
+            document.body.className = (e.clientX < window.innerWidth * 0.4) ? 'cursor-prev' : 'cursor-next';
         });
     </script>
 </body>
