@@ -42,7 +42,7 @@
             z-index: 1;
         }
 
-        /* 膠卷雜訊層：Safari 優化透明度 */
+        /* 膠卷雜訊層 */
         #noise-canvas {
             position: absolute;
             top: 0; left: 0;
@@ -50,7 +50,6 @@
             z-index: 10;
             opacity: 0.03;
             pointer-events: none;
-            will-change: transform;
         }
 
         #particle-canvas { 
@@ -132,7 +131,6 @@
 </head>
 <body class="flex items-center justify-center">
 
-    <!-- 膠卷微粒畫布 -->
     <canvas id="noise-canvas"></canvas>
 
     <!-- 首頁 Overlay -->
@@ -196,13 +194,8 @@
     <canvas id="main-canvas"></canvas>
 
     <script>
-        /**
-         * Safari 相容性優化：
-         * 1. 使用 await img.decode() 確保圖片進入 GPU
-         * 2. 針對 Safari Resize 事件頻繁觸發進行防抖處理
-         */
         const canvas = document.getElementById('main-canvas');
-        const ctx = canvas.getContext('2d', { alpha: false }); // 關閉透明度提升 Canvas 效能
+        const ctx = canvas.getContext('2d', { alpha: false });
         const pCanvas = document.getElementById('particle-canvas');
         const pCtx = pCanvas.getContext('2d');
         const nCanvas = document.getElementById('noise-canvas');
@@ -221,76 +214,6 @@
         ];
         let currentBgIdx = 0;
 
-        // --- 粒子系統 ---
-        let particles = [];
-        class Particle {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = Math.random() * pCanvas.width;
-                this.y = -50 - Math.random() * 200;
-                this.size = 10 + Math.random() * 20;
-                this.speed = 0.5 + Math.random() * 0.8;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotSpeed = (Math.random() - 0.5) * 0.01;
-                this.type = Math.random() > 0.5 ? 'chip' : 'card';
-                this.opacity = 0.1 + Math.random() * 0.2;
-            }
-            update() {
-                this.y += this.speed;
-                this.rotation += this.rotSpeed;
-                if (this.y > pCanvas.height + 50) this.reset();
-            }
-            draw() {
-                pCtx.save();
-                pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
-                pCtx.globalAlpha = this.opacity;
-                pCtx.strokeStyle = '#d4af37'; pCtx.lineWidth = 1;
-                if (this.type === 'chip') {
-                    pCtx.beginPath(); pCtx.arc(0, 0, this.size, 0, Math.PI * 2); pCtx.stroke();
-                } else {
-                    pCtx.strokeRect(-this.size/2, -this.size * 0.7, this.size, this.size * 1.4);
-                }
-                pCtx.restore();
-            }
-        }
-
-        // --- 膠卷微粒動畫 (Safari 效能優化版) ---
-        let lastNoiseTime = 0;
-        function createNoise() {
-            if (nCanvas.width === 0 || nCanvas.height === 0) return;
-            // 降低雜訊更新頻率至約 15fps，節省 Safari GPU
-            const now = Date.now();
-            if (now - lastNoiseTime < 60) return;
-            lastNoiseTime = now;
-
-            try {
-                const idata = nCtx.createImageData(nCanvas.width, nCanvas.height);
-                const buffer32 = new Uint32Array(idata.data.buffer);
-                for (let i = 0; i < buffer32.length; i++) {
-                    if (Math.random() < 0.05) buffer32[i] = 0x11000000;
-                }
-                nCtx.putImageData(idata, 0, 0);
-            } catch (e) {}
-        }
-
-        function animateNoise() {
-            createNoise();
-            requestAnimationFrame(animateNoise);
-        }
-
-        function initParticles() {
-            particles = [];
-            const count = window.innerWidth < 768 ? 20 : 40;
-            for (let i = 0; i < count; i++) particles.push(new Particle());
-        }
-        function animateParticles() {
-            if (stopParticles) return;
-            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animateParticles);
-        }
-
-        // --- 場景配置 ---
         const sceneConfig = [
             { url: 'https://live.staticflickr.com/65535/55036738467_6e8273bf12_h.jpg', text: '「幸運，從來不是偶然的施捨。」' },
             { url: 'https://live.staticflickr.com/65535/55037821323_0a332f06ea_h.jpg', text: '「既然籌碼已經上桌，就沒有收回的道理。」' },
@@ -326,6 +249,62 @@
             { url: 'https://live.staticflickr.com/65535/55037994250_40347a0dbd_h.jpg', text: '「賭場的盡頭。」' }
         ];
 
+        // --- 粒子系統 (Safari 輕量化) ---
+        let particles = [];
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * pCanvas.width;
+                this.y = -50 - Math.random() * 200;
+                this.size = 10 + Math.random() * 15;
+                this.speed = 0.5 + Math.random() * 0.5;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.01;
+                this.opacity = 0.1 + Math.random() * 0.2;
+            }
+            update() {
+                this.y += this.speed;
+                this.rotation += this.rotSpeed;
+                if (this.y > pCanvas.height + 50) this.reset();
+            }
+            draw() {
+                pCtx.save();
+                pCtx.translate(this.x, this.y); pCtx.rotate(this.rotation);
+                pCtx.globalAlpha = this.opacity;
+                pCtx.strokeStyle = '#d4af37';
+                pCtx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+                pCtx.restore();
+            }
+        }
+
+        // --- 膠卷雜訊 (降低資源消耗) ---
+        let lastNoiseTime = 0;
+        function animateNoise() {
+            const now = Date.now();
+            if (now - lastNoiseTime > 66) { // ~15fps
+                if (nCanvas.width > 0 && nCanvas.height > 0) {
+                    nCtx.clearRect(0,0,nCanvas.width, nCanvas.height);
+                    for(let i=0; i<1000; i++) {
+                        nCtx.fillStyle = `rgba(255,255,255,${Math.random()*0.05})`;
+                        nCtx.fillRect(Math.random()*nCanvas.width, Math.random()*nCanvas.height, 1, 1);
+                    }
+                }
+                lastNoiseTime = now;
+            }
+            requestAnimationFrame(animateNoise);
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 30; i++) particles.push(new Particle());
+        }
+        function animateParticles() {
+            if (stopParticles) return;
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+
         function resize() {
             const w = window.innerWidth;
             const h = window.innerHeight;
@@ -335,30 +314,33 @@
             if (currentIdx >= 0 && images[currentIdx]) drawScene(images[currentIdx], 1);
         }
         window.addEventListener('resize', resize);
-        resize();
 
-        async function preloadAssets() {
-            const imgPromises = sceneConfig.map((scene) => {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    img.crossOrigin = "anonymous";
-                    img.onload = async () => {
-                        try {
-                            // Safari 優化：確保解碼完成才算加載成功
-                            if (img.decode) await img.decode();
-                            resolve(img);
-                        } catch (e) {
-                            resolve(img); // 回退方案
-                        }
-                    };
-                    img.onerror = () => resolve(null);
-                    img.src = scene.url;
+        // --- 核心優化：階梯式加載 ---
+        async function preloadEssential() {
+            // 首先加載首頁背景與第一張圖
+            const bgPromises = bgImagesUrls.map(url => {
+                return new Promise(res => {
+                    const img = new Image(); img.crossOrigin = "anonymous";
+                    img.onload = () => res(img); img.src = url;
                 });
             });
-            images = await Promise.all(imgPromises);
-            document.getElementById('total-num').innerText = String(images.length).padStart(2, '0');
+            const firstImgPromise = new Promise(res => {
+                const img = new Image(); img.crossOrigin = "anonymous";
+                img.onload = () => res(img); img.src = sceneConfig[0].url;
+            });
+
+            await Promise.all([...bgPromises, firstImgPromise]);
+            
+            // 允許啟動
             document.getElementById('loading-status').classList.add('hidden');
             document.getElementById('entry-btn').classList.remove('hidden');
+
+            // 隨後悄悄加載剩餘圖片
+            sceneConfig.forEach((s, i) => {
+                const img = new Image(); img.crossOrigin = "anonymous";
+                img.src = s.url;
+                images[i] = img;
+            });
         }
 
         function startBgSlideshow() {
@@ -370,22 +352,20 @@
                 if (stopParticles) return;
                 const nextBgIdx = (currentBgIdx + 1) % bgImagesUrls.length;
                 const nextSlideIdx = (activeIdx + 1) % 2;
-                const currentSlide = slides[activeIdx];
-                const nextSlide = slides[nextSlideIdx];
-                nextSlide.style.backgroundImage = `url(${bgImagesUrls[nextBgIdx]})`;
-                currentSlide.style.opacity = 0;
-                nextSlide.style.opacity = 1;
+                slides[nextSlideIdx].style.backgroundImage = `url(${bgImagesUrls[nextBgIdx]})`;
+                slides[activeIdx].style.opacity = 0;
+                slides[nextSlideIdx].style.opacity = 1;
                 currentBgIdx = nextBgIdx;
                 activeIdx = nextSlideIdx;
             }, 6000);
         }
 
         function drawScene(img, opacity) {
-            if (!img || img.width === 0) return;
+            if (!img || !img.complete || img.naturalWidth === 0) return;
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            const imgAspect = img.width / img.height;
+            const imgAspect = img.naturalWidth / img.naturalHeight;
             const canvasAspect = canvas.width / canvas.height;
             const fitScale = 0.98;
             let drawW, drawH;
@@ -403,33 +383,45 @@
             ctx.globalAlpha = 1.0;
         }
 
-        function renderCurrentScene() {
-            if (currentIdx < 0 || !images[currentIdx]) return;
+        async function renderCurrentScene() {
+            if (currentIdx < 0) return;
             const img = images[currentIdx];
-            const scene = sceneConfig[currentIdx];
+            if (!img) return;
+
             document.getElementById('current-num').innerText = String(currentIdx + 1).padStart(2, '0');
             
+            // Safari 優化：在重繪前確保解碼
+            try {
+                if (img.decode) await img.decode();
+            } catch (e) {}
+
             drawScene(img, 1);
             
             gsap.fromTo("#subtitle-text", 
-                { opacity: 0, y: 15 }, 
-                { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", 
-                  onStart: () => { document.getElementById('subtitle-text').innerText = scene.text; } 
+                { opacity: 0, y: 10 }, 
+                { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", 
+                  onStart: () => { document.getElementById('subtitle-text').innerText = sceneConfig[currentIdx].text; } 
                 }
             );
         }
 
         function handleNavigation(clientX) {
             if (!isInGalleryMode || isTransitioning) return;
-            isTransitioning = true;
+            
+            let nextIdx;
             if (clientX < window.innerWidth * 0.4) {
-                currentIdx = (currentIdx - 1 + images.length) % images.length;
+                nextIdx = (currentIdx - 1 + sceneConfig.length) % sceneConfig.length;
             } else {
-                currentIdx = (currentIdx + 1) % images.length;
+                nextIdx = (currentIdx + 1) % sceneConfig.length;
             }
+
+            // 確保目標圖片已加載
+            if (!images[nextIdx] || !images[nextIdx].complete) return;
+
+            isTransitioning = true;
+            currentIdx = nextIdx;
             renderCurrentScene();
-            // Safari 優化：給予更長的緩衝時間避免連點卡死
-            setTimeout(() => { isTransitioning = false; }, 350);
+            setTimeout(() => { isTransitioning = false; }, 400);
         }
 
         function exitExperience() {
@@ -438,20 +430,19 @@
             gsap.to("#overlay", { opacity: 1, duration: 0.8 });
             gsap.to("#photo-ui", { opacity: 0, pointerEvents: 'none', duration: 0.5 });
             gsap.to(canvas, { opacity: 0, duration: 0.5, onComplete: () => {
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 canvas.style.opacity = 1; currentIdx = -1;
             }});
             animateParticles();
         }
 
         window.onload = async () => {
-            // Safari 強制觸發一次 Resize 確保尺寸獲取正確
             resize(); 
-            await preloadAssets();
-            animateParticles();
             animateNoise();
+            animateParticles();
             startBgSlideshow();
+            await preloadEssential();
+            
             gsap.to("#brand-title", { opacity: 1, y: 0, duration: 1.5, ease: "power4.out" });
             gsap.to("#sub-brand", { opacity: 0.6, duration: 1, delay: 0.5 });
 
@@ -465,7 +456,9 @@
                         document.getElementById('overlay').style.display = 'none';
                         document.getElementById('photo-ui').classList.remove('pointer-events-none');
                         gsap.to("#photo-ui", { opacity: 1, duration: 0.5 });
-                        currentIdx = 0; renderCurrentScene();
+                        currentIdx = 0; 
+                        renderCurrentScene();
+                        document.getElementById('total-num').innerText = String(sceneConfig.length).padStart(2, '0');
                     }
                 });
             });
